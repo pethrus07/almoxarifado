@@ -1,0 +1,51 @@
+name = "almoxarifado"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# O front inteiro é um arquivo só, importado como texto dentro do worker.
+# O CSS entra do mesmo jeito e é colado na página — uma requisição só, nada de
+# CDN: o almoxarifado de obra tem sinal ruim e às vezes nenhum.
+[[rules]]
+type = "Text"
+globs = ["**/*.html", "**/*.css"]
+fallthrough = true
+
+# ------------------------------------------------------------
+# CONTA: conta própria da RYZE (subdomínio workers.dev "ryze").
+# NÃO é a ryzecode08 — o subdomínio de lá é "desbravando-utv" e a URL
+# sairia com nome de outro cliente na frente do prospect.
+#
+# Sem CLOUDFLARE_ACCOUNT_ID no ambiente o wrangler cai no OAuth antigo,
+# mira a conta errada e falha com "7404 database not found".
+# ------------------------------------------------------------
+account_id = "642a4a3988033760c46abb97c122e0dd"
+
+# Banco. Criar com:  npx wrangler d1 create almoxarifado
+# O comando imprime o database_id — colar abaixo.
+[[d1_databases]]
+binding = "DB"
+database_name = "almoxarifado"
+database_id = "PREENCHER_APOS_CRIAR"
+
+# Foto do item, da avaria e do comprovante de entrega.
+#   npx wrangler r2 bucket create almoxarifado-fotos
+[[r2_buckets]]
+binding = "FOTOS"
+bucket_name = "almoxarifado-fotos"
+
+# ------------------------------------------------------------
+# STAGING — banco e bucket separados.
+#   npx wrangler deploy --env staging
+# ------------------------------------------------------------
+[env.staging]
+name = "almoxarifado-staging"
+account_id = "642a4a3988033760c46abb97c122e0dd"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "almoxarifado-staging"
+database_id = "PREENCHER_APOS_CRIAR"
+
+[[env.staging.r2_buckets]]
+binding = "FOTOS"
+bucket_name = "almoxarifado-fotos-staging"

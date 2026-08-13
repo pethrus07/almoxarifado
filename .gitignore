@@ -1,0 +1,10 @@
+node_modules/
+.wrangler/
+.dev.vars
+*.log
+
+# Dado real de cliente nunca entra no git.
+seed-*-real.sql
+backup*.sql
+ferramentas/saida/
+test/telas/

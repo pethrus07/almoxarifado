@@ -1,0 +1,900 @@
+/* ============================================================
+   ALMOXARIFADO — folha de estilo
+
+   Tokens semânticos que trocam por tema. Escuro é o padrão: o
+   almoxarifado é galpão, luz baixa, e tela clara às 6h da manhã
+   cega quem acabou de entrar.
+
+   Neutro QUENTE (pedra/argila) em vez do cinza-azulado de painel de
+   software. É obra: cimento, madeira, poeira. O ambiente já tem essa
+   cor, e a tela que combina com o lugar parece pertencer a ele.
+
+   Três camadas que NÃO se misturam:
+     · tokens de superfície  — a casca, troca por tema
+     · --acento              — a cor da empresa, vem do CADASTRO.
+                               Pinta identidade: topo, botão principal, aba ativa.
+     · semáforo              — verde/âmbar/vermelho de estoque e prazo.
+                               NUNCA muda por cliente. Semáforo que muda de
+                               cor por empresa não significa mais nada.
+   ============================================================ */
+
+:root, :root[data-tema="escuro"] {
+  color-scheme: dark;
+
+  --app:          #12100e;
+  --superficie:   #1a1714;
+  --superficie-2: #211d19;
+  --elevado:      #272320;
+  --linha:        #302b25;
+  --linha-forte:  #473e35;
+  --conteudo:     #f3eee7;
+  --fraco:        #a89d90;
+  --sutil:        #6f665b;
+
+  --sombra:    0 10px 30px rgb(0 0 0 / .45);
+  --sombra-sm: 0 2px 8px rgb(0 0 0 / .3);
+
+  /* Semáforo. Fixo em toda tela, para todo cliente.
+     verde = folgado · âmbar = perto do mínimo · vermelho = abaixo/zerado
+     cinza = parado, sem movimento */
+  --ok:      #10b981;  --ok-txt:      #6ee7b7;  --ok-fundo:      #10b98122;
+  --atencao: #f59e0b;  --atencao-txt: #fcd34d;  --atencao-fundo: #f59e0b22;
+  --critico: #f43f5e;  --critico-txt: #fda4af;  --critico-fundo: #f43f5e22;
+  --neutro:  #78716c;  --neutro-txt:  #d6d3d1;  --neutro-fundo:  #78716c22;
+
+  --entrada: #34d399;   /* movimento que soma */
+  --saida:   #fb923c;   /* movimento que subtrai */
+}
+
+:root[data-tema="claro"] {
+  color-scheme: light;
+
+  --app:          #f7f4ef;
+  --superficie:   #ffffff;
+  --superficie-2: #f2eee7;
+  --elevado:      #ffffff;
+  --linha:        #e7e1d7;
+  --linha-forte:  #d2c9bb;
+  --conteudo:     #1b1713;
+  --fraco:        #6b6157;
+  --sutil:        #948a7e;
+
+  --sombra:    0 10px 30px rgb(60 45 30 / .10);
+  --sombra-sm: 0 1px 3px rgb(60 45 30 / .10);
+
+  --ok-txt:      #047857;  --ok-fundo:      #10b98118;
+  --atencao-txt: #b45309;  --atencao-fundo: #f59e0b18;
+  --critico-txt: #be123c;  --critico-fundo: #f43f5e18;
+  --neutro-txt:  #57534e;  --neutro-fundo:  #78716c18;
+
+  --entrada: #059669;
+  --saida:   #c2410c;
+}
+
+:root {
+  /* Cor da empresa. Trocada em tempo de execução por pintarAcento(). */
+  --acento:     #c08a52;
+  --acento-rgb: 192, 138, 82;
+  --acento-txt: #1b1713;
+
+  --raio:    14px;
+  --raio-sm: 9px;
+  --raio-lg: 20px;
+  --barra:   64px;
+
+  /* Alvo de dedo. Quem usa está de pé, no galpão, com material numa das
+     mãos e às vezes de luva. Os 44px do iOS são pouco para isso — e o
+     botão mais tocado do sistema (dar baixa) usa o token inteiro. */
+  --toque: 56px;
+
+  --fonte: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+           Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent }
+
+/* O atributo hidden tem que ganhar de qualquer display declarado aqui:
+   classe vence atributo na cascata, e sem isto a casca do app aparece
+   por cima da tela de login. */
+[hidden] { display: none !important }
+
+html, body { height: 100%; margin: 0 }
+body {
+  background: var(--app);
+  color: var(--conteudo);
+  font: 15px/1.55 var(--fonte);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: contain;
+  transition: background-color .2s, color .2s;
+}
+button, input, select, textarea { font: inherit; color: inherit }
+button { cursor: pointer; border: 0; background: none; padding: 0 }
+a { color: var(--acento); text-decoration: none }
+svg { display: block; flex: none }
+
+/* Quantidade, saldo, dinheiro e código: sempre alinhados na vertical.
+   Número de largura variável numa coluna de estoque é ilegível. */
+.num, .qtd, td.num, .dinheiro, .mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.mono { font-family: var(--mono); font-size: .92em; letter-spacing: -.01em }
+
+* { scrollbar-width: thin; scrollbar-color: var(--linha-forte) transparent }
+*::-webkit-scrollbar { width: 9px; height: 9px }
+*::-webkit-scrollbar-thumb { background: var(--linha-forte); border-radius: 6px }
+*::-webkit-scrollbar-track { background: transparent }
+
+::selection { background: rgb(var(--acento-rgb) / .3) }
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+  border-radius: var(--raio-sm);
+}
+
+/* ============================================================
+   TIPOGRAFIA
+   ============================================================ */
+
+h1, h2, h3, h4 { margin: 0; font-weight: 650; line-height: 1.25; letter-spacing: -.015em }
+h1 { font-size: 1.5rem }
+h2 { font-size: 1.15rem }
+h3 { font-size: 1rem }
+p { margin: 0 0 .7em }
+p:last-child { margin-bottom: 0 }
+
+.titulo-seaco,
+.rotulo-secao {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--sutil);
+}
+.fraco  { color: var(--fraco) }
+.sutil  { color: var(--sutil) }
+.peq    { font-size: .82rem }
+.mini   { font-size: .74rem }
+.forte  { font-weight: 650 }
+.centro { text-align: center }
+.direita{ text-align: right }
+.quebra { overflow-wrap: anywhere }
+.uma-linha {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.duas-linhas {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================================================
+   CASCA — lateral no computador, barra embaixo no celular
+   ============================================================ */
+
+.tudo { display: flex; min-height: 100dvh }
+
+.lateral {
+  width: 232px; flex: none;
+  background: var(--superficie);
+  border-right: 1px solid var(--linha);
+  padding: 16px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  position: sticky; top: 0; height: 100dvh; overflow-y: auto;
+}
+
+.marca { display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px }
+.marca-selo {
+  width: 38px; height: 38px; flex: none;
+  border-radius: 11px;
+  background: var(--acento); color: var(--acento-txt);
+  display: grid; place-items: center;
+  font-weight: 800; font-size: .95rem; letter-spacing: -.02em;
+  box-shadow: 0 2px 10px rgb(var(--acento-rgb) / .35);
+}
+.marca-nome { font-weight: 700; font-size: .95rem; line-height: 1.15 }
+.marca-sub  { font-size: .72rem; color: var(--sutil) }
+
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: var(--raio-sm);
+  color: var(--fraco); font-weight: 550; font-size: .92rem;
+  min-height: 42px; width: 100%; text-align: left;
+  transition: background-color .12s, color .12s;
+}
+.nav-item:hover { background: var(--superficie-2); color: var(--conteudo) }
+.nav-item[aria-current="true"] {
+  background: rgb(var(--acento-rgb) / .14);
+  color: var(--conteudo); font-weight: 650;
+  box-shadow: inset 0 0 0 1px rgb(var(--acento-rgb) / .28);
+}
+.nav-item[aria-current="true"] svg { color: var(--acento) }
+.nav-item .conta {
+  margin-left: auto; font-size: .72rem; font-weight: 700;
+  background: var(--critico); color: #fff;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 10px; display: grid; place-items: center;
+}
+.nav-espaco { flex: 1 }
+
+.principal { flex: 1; min-width: 0; display: flex; flex-direction: column }
+
+.topo {
+  position: sticky; top: 0; z-index: 30;
+  background: color-mix(in srgb, var(--app) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--linha);
+  padding: 12px 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.topo h1 { font-size: 1.15rem }
+
+.conteudo { padding: 20px; max-width: 1180px; width: 100%; margin: 0 auto; flex: 1 }
+
+.barra-baixo { display: none }
+
+@media (max-width: 860px) {
+  .lateral { display: none }
+  .conteudo { padding: 14px 14px calc(var(--barra) + 26px) }
+  .topo { padding: 10px 14px }
+  .barra-baixo {
+    display: flex;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    height: calc(var(--barra) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: color-mix(in srgb, var(--superficie) 96%, transparent);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--linha);
+  }
+  .barra-baixo button {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    color: var(--sutil); font-size: .68rem; font-weight: 600;
+    min-height: var(--barra); position: relative;
+  }
+  .barra-baixo button[aria-current="true"] { color: var(--acento) }
+  .barra-baixo button[aria-current="true"]::before {
+    content: ""; position: absolute; top: 0; width: 26px; height: 2.5px;
+    border-radius: 0 0 3px 3px; background: var(--acento);
+  }
+  .barra-baixo .conta {
+    position: absolute; top: 8px; left: 50%; margin-left: 4px;
+    font-size: .62rem; font-weight: 700; background: var(--critico); color: #fff;
+    min-width: 17px; height: 17px; padding: 0 4px;
+    border-radius: 9px; display: grid; place-items: center;
+  }
+}
+
+/* ============================================================
+   BOTÕES — o alvo de dedo é requisito, não estilo
+   ============================================================ */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 0 16px; min-height: 44px;
+  border-radius: var(--raio-sm);
+  font-weight: 600; font-size: .92rem;
+  background: var(--superficie-2); color: var(--conteudo);
+  box-shadow: inset 0 0 0 1px var(--linha);
+  transition: filter .12s, background-color .12s, transform .06s;
+  white-space: nowrap;
+}
+.btn:hover  { filter: brightness(1.12) }
+.btn:active { transform: translateY(1px) }
+.btn[disabled] { opacity: .45; pointer-events: none }
+
+.btn.primario {
+  background: var(--acento); color: var(--acento-txt);
+  box-shadow: 0 1px 10px rgb(var(--acento-rgb) / .3);
+  font-weight: 700;
+}
+.btn.perigo  { background: var(--critico); color: #fff; box-shadow: none }
+.btn.fantasma{ background: transparent; box-shadow: inset 0 0 0 1px var(--linha) }
+.btn.plano   { background: transparent; box-shadow: none; color: var(--fraco) }
+.btn.plano:hover { background: var(--superficie-2); color: var(--conteudo) }
+.btn.largo   { width: 100%; }
+.btn.grande  { min-height: var(--toque); font-size: 1rem; padding: 0 22px }
+
+/* O controle mais usado do sistema inteiro — dar baixa com o material na
+   mão. Usa o --toque INTEIRO e não encolhe em tela nenhuma. */
+.btn.toque { min-height: var(--toque); min-width: var(--toque); font-size: 1rem }
+
+.btn-icone {
+  display: inline-grid; place-items: center;
+  width: 40px; height: 40px; border-radius: var(--raio-sm);
+  color: var(--fraco); flex: none;
+}
+.btn-icone:hover { background: var(--superficie-2); color: var(--conteudo) }
+.btn-icone.toque { width: var(--toque); height: var(--toque) }
+
+.acoes { display: flex; gap: 8px; flex-wrap: wrap }
+.acoes.fim { justify-content: flex-end }
+
+/* ============================================================
+   CARTÃO
+   ============================================================ */
+
+.cartao {
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 16px;
+}
+.cartao.plano { background: transparent }
+.cartao.apertado { padding: 12px }
+.cartao-cab {
+  display: flex; align-items: center; gap: 10px;
+  margin: -2px 0 14px;
+}
+.cartao-cab h2, .cartao-cab h3 { flex: 1; min-width: 0 }
+
+.grade { display: grid; gap: 12px }
+.grade.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+.grade.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)) }
+.grade.c4 { grid-template-columns: repeat(4, minmax(0, 1fr)) }
+.grade.auto { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)) }
+@media (max-width: 860px) {
+  .grade.c3, .grade.c4 { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+}
+@media (max-width: 480px) {
+  .grade.c2, .grade.c3 { grid-template-columns: minmax(0, 1fr) }
+  .grade.c2.firme { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  /* Os indicadores do painel ficam em DUAS colunas mesmo no celular
+     estreito. Empilhados um por linha, os quatro números viram uma torre
+     e empurram a lista do que precisa comprar para fora da tela — que é
+     justamente o que a pessoa abriu o sistema para ver. */
+  .grade.c4 { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .grade.c4 .indicador { padding: 12px }
+  .grade.c4 .indicador-valor { font-size: 1.45rem }
+}
+
+.pilha { display: flex; flex-direction: column; gap: 12px }
+.pilha.apertada { gap: 8px }
+.fila { display: flex; align-items: center; gap: 10px }
+.fila.topo-alinhado { align-items: flex-start }
+.cresce { flex: 1; min-width: 0 }
+
+/* ============================================================
+   INDICADOR — os números do painel
+   ============================================================ */
+
+.indicador {
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 2px;
+  position: relative; overflow: hidden;
+  text-align: left; width: 100%;
+}
+button.indicador { transition: border-color .12s }
+button.indicador:hover { border-color: var(--linha-forte) }
+.indicador-rotulo {
+  font-size: .74rem; font-weight: 600; color: var(--fraco);
+  display: flex; align-items: center; gap: 6px;
+}
+.indicador-valor {
+  font-size: 1.8rem; font-weight: 700; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums; line-height: 1.15;
+}
+.indicador-nota { font-size: .74rem; color: var(--sutil) }
+.indicador.ok      .indicador-valor { color: var(--ok-txt) }
+.indicador.atencao .indicador-valor { color: var(--atencao-txt) }
+.indicador.critico .indicador-valor { color: var(--critico-txt) }
+.indicador.destaque { border-color: rgb(var(--acento-rgb) / .35) }
+.indicador.destaque .indicador-valor { color: var(--acento) }
+
+/* ============================================================
+   SELO — com anel interno, nunca borda sólida
+   ============================================================ */
+
+.selo {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: .74rem; font-weight: 650; line-height: 1.5;
+  background: var(--neutro-fundo); color: var(--neutro-txt);
+  box-shadow: inset 0 0 0 1px currentColor;
+  white-space: nowrap;
+}
+.selo.ok      { background: var(--ok-fundo);      color: var(--ok-txt) }
+.selo.atencao { background: var(--atencao-fundo); color: var(--atencao-txt) }
+.selo.critico { background: var(--critico-fundo); color: var(--critico-txt) }
+.selo.acento  { background: rgb(var(--acento-rgb) / .16); color: var(--acento) }
+.selo.solido  { background: var(--acento); color: var(--acento-txt); box-shadow: none }
+.selo .ponto  { width: 6px; height: 6px; border-radius: 50%; background: currentColor }
+
+/* ============================================================
+   BUSCA — a tela principal deste sistema
+   Quem usa tem o material na mão e precisa achar em 3 segundos.
+   ============================================================ */
+
+.busca-caixa {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 0 12px; min-height: var(--toque);
+  transition: border-color .12s, box-shadow .12s;
+}
+.busca-caixa:focus-within {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px rgb(var(--acento-rgb) / .16);
+}
+.busca-caixa input {
+  flex: 1; min-width: 0; border: 0; background: none; outline: none;
+  font-size: 1rem; padding: 12px 0;
+}
+.busca-caixa input::placeholder { color: var(--sutil) }
+.busca-caixa .lupa { color: var(--sutil); flex: none }
+.busca-caixa .atalho {
+  font-size: .68rem; font-weight: 700; color: var(--sutil);
+  border: 1px solid var(--linha-forte); border-radius: 5px;
+  padding: 1px 6px; flex: none;
+}
+@media (max-width: 860px) { .busca-caixa .atalho { display: none } }
+
+.busca-grupo { margin-top: 16px }
+.busca-grupo-titulo {
+  font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--sutil);
+  padding: 0 2px 8px;
+}
+mark {
+  background: rgb(var(--acento-rgb) / .28);
+  color: inherit; border-radius: 3px; padding: 0 1px;
+}
+
+/* Chips de filtro que se combinam. */
+.chips { display: flex; gap: 7px; flex-wrap: wrap }
+
+/* No celular eles NÃO quebram em linha: com as facetas mais as categorias
+   dá sete fileiras, e o resultado da busca — a única coisa que importa
+   nesta tela — nasce abaixo da dobra. Viram uma faixa que rola de lado,
+   com o começo dos próximos aparecendo para dizer que há mais. */
+@media (max-width: 860px) {
+  .chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    /* sangra até a borda da tela: cortar o chip no meio é o que faz
+       entender que a faixa continua */
+    margin-inline: -14px;
+    padding-inline: 14px;
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none }
+  .chip { flex: none; scroll-snap-align: start }
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; min-height: 34px;
+  border-radius: 999px; font-size: .82rem; font-weight: 600;
+  background: var(--superficie); color: var(--fraco);
+  box-shadow: inset 0 0 0 1px var(--linha);
+  transition: all .12s;
+}
+.chip:hover { color: var(--conteudo); box-shadow: inset 0 0 0 1px var(--linha-forte) }
+.chip[aria-pressed="true"] {
+  background: rgb(var(--acento-rgb) / .16); color: var(--acento);
+  box-shadow: inset 0 0 0 1px rgb(var(--acento-rgb) / .45);
+}
+.chip .conta {
+  font-size: .72rem; font-weight: 700; opacity: .75;
+  font-variant-numeric: tabular-nums;
+}
+.chip.critico[aria-pressed="true"] {
+  background: var(--critico-fundo); color: var(--critico-txt);
+  box-shadow: inset 0 0 0 1px var(--critico);
+}
+.chip.atencao[aria-pressed="true"] {
+  background: var(--atencao-fundo); color: var(--atencao-txt);
+  box-shadow: inset 0 0 0 1px var(--atencao);
+}
+
+/* ============================================================
+   LISTA DE ITEM — a linha mais repetida do sistema
+   ============================================================ */
+
+.lista { display: flex; flex-direction: column; gap: 7px }
+
+.linha {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 11px 13px; min-height: 64px;
+  width: 100%; text-align: left;
+  transition: border-color .12s, background-color .12s;
+}
+button.linha:hover { border-color: var(--linha-forte); background: var(--superficie-2) }
+.linha.critico { border-left: 3px solid var(--critico) }
+.linha.atencao { border-left: 3px solid var(--atencao) }
+
+.linha-foto {
+  width: 46px; height: 46px; flex: none;
+  border-radius: 10px; object-fit: cover;
+  background: var(--superficie-2);
+  display: grid; place-items: center; color: var(--sutil);
+  overflow: hidden;
+}
+.linha-corpo { flex: 1; min-width: 0 }
+.linha-nome { font-weight: 600; font-size: .94rem }
+.linha-meta {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  font-size: .77rem; color: var(--sutil); margin-top: 2px;
+}
+.linha-meta .sep { opacity: .5 }
+.linha-fim { text-align: right; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px }
+.linha-saldo {
+  font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.linha-saldo small { font-size: .72rem; font-weight: 500; color: var(--sutil); margin-left: 2px }
+.linha-saldo.ok      { color: var(--ok-txt) }
+.linha-saldo.atencao { color: var(--atencao-txt) }
+.linha-saldo.critico { color: var(--critico-txt) }
+
+/* Barra de nível de estoque: mínimo, atual, máximo. */
+.medidor {
+  height: 5px; border-radius: 3px; background: var(--superficie-2);
+  overflow: hidden; position: relative; width: 100%;
+}
+.medidor > i { display: block; height: 100%; border-radius: 3px; transition: width .3s }
+.medidor.ok      > i { background: var(--ok) }
+.medidor.atencao > i { background: var(--atencao) }
+.medidor.critico > i { background: var(--critico) }
+.medidor .marca-min {
+  position: absolute; top: -2px; bottom: -2px; width: 2px;
+  background: var(--conteudo); opacity: .45;
+}
+
+/* ============================================================
+   FORMULÁRIO
+   ============================================================ */
+
+.campo { display: flex; flex-direction: column; gap: 6px }
+.campo > label, .rotulo {
+  font-size: .78rem; font-weight: 650; color: var(--fraco);
+}
+.campo .dica { font-size: .74rem; color: var(--sutil) }
+.campo .erro { font-size: .77rem; color: var(--critico-txt); font-weight: 600 }
+
+input[type=text], input[type=password], input[type=number], input[type=date],
+input[type=tel], input[type=search], input[type=email], select, textarea {
+  background: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-sm);
+  padding: 11px 12px; min-height: 46px;
+  width: 100%; outline: none;
+  transition: border-color .12s, box-shadow .12s;
+}
+textarea { min-height: 82px; resize: vertical; line-height: 1.5 }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px rgb(var(--acento-rgb) / .16);
+}
+input[aria-invalid="true"] { border-color: var(--critico) }
+select {
+  appearance: none; cursor: pointer; padding-right: 34px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23948a7e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 11px center;
+}
+input::placeholder, textarea::placeholder { color: var(--sutil) }
+input[type=number] { -moz-appearance: textfield }
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0 }
+
+.campo-unidade { position: relative }
+.campo-unidade > span {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: .84rem; font-weight: 600; color: var(--sutil); pointer-events: none;
+}
+.campo-unidade input { padding-right: 56px }
+
+/* Teclado numérico grande — substitui o prompt() do navegador na hora de
+   digitar quantidade. Dedo de luva não acerta campo de 40px. */
+.teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+.teclado button {
+  min-height: var(--toque); border-radius: var(--raio-sm);
+  background: var(--superficie-2); box-shadow: inset 0 0 0 1px var(--linha);
+  font-size: 1.35rem; font-weight: 650; font-variant-numeric: tabular-nums;
+  transition: filter .1s;
+}
+.teclado button:active { filter: brightness(1.3) }
+.visor {
+  text-align: center; padding: 18px 10px;
+  font-size: 2.4rem; font-weight: 700; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.visor small { font-size: .95rem; font-weight: 600; color: var(--sutil); margin-left: 6px }
+
+/* Alternador segmentado — entrada/saída, tema, período. */
+.segmentado {
+  display: flex; gap: 3px; padding: 3px;
+  background: var(--superficie-2); border-radius: var(--raio-sm);
+  border: 1px solid var(--linha);
+}
+.segmentado button {
+  flex: 1; min-height: 38px; border-radius: 7px;
+  font-size: .86rem; font-weight: 600; color: var(--fraco);
+  transition: background-color .12s, color .12s;
+}
+.segmentado button[aria-pressed="true"] {
+  background: var(--elevado); color: var(--conteudo);
+  box-shadow: var(--sombra-sm);
+}
+.segmentado.grande button { min-height: var(--toque); font-size: .95rem }
+.segmentado button[aria-pressed="true"][data-cor="entrada"] { color: var(--entrada) }
+.segmentado button[aria-pressed="true"][data-cor="saida"]   { color: var(--saida) }
+
+/* ============================================================
+   FOLHA (dialog) — nada de alert/confirm/prompt do navegador:
+   vem em inglês, é minúsculo e assusta quem não tem prática.
+   ============================================================ */
+
+dialog.folha {
+  border: 0; padding: 0; background: none; color: inherit;
+  max-width: 100%; max-height: 100%; width: 100%; height: 100%;
+  margin: 0; overflow: visible;
+}
+dialog.folha::backdrop { background: rgb(0 0 0 / .55); backdrop-filter: blur(3px) }
+
+.folha-caixa {
+  position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: min(560px, 100%);
+  max-height: 92dvh;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-bottom: 0;
+  border-radius: var(--raio-lg) var(--raio-lg) 0 0;
+  box-shadow: var(--sombra);
+  display: flex; flex-direction: column;
+  animation: subir .22s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes subir { from { transform: translate(-50%, 22px); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .folha-caixa { animation: none } }
+
+@media (min-width: 861px) {
+  .folha-caixa {
+    bottom: auto; top: 50%; transform: translate(-50%, -50%);
+    border-radius: var(--raio-lg); border-bottom: 1px solid var(--linha);
+    max-height: 86dvh;
+  }
+  @keyframes subir { from { transform: translate(-50%, calc(-50% + 14px)); opacity: 0 } }
+}
+
+.folha-cab {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 16px 12px; border-bottom: 1px solid var(--linha);
+  flex: none;
+}
+.folha-cab h2 { flex: 1; min-width: 0; font-size: 1.05rem }
+.folha-corpo { padding: 16px; overflow-y: auto; flex: 1 }
+.folha-pe {
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--linha);
+  display: flex; gap: 8px; flex: none;
+  background: var(--superficie);
+}
+.folha-pe .btn { flex: 1; min-height: var(--toque) }
+.puxador {
+  width: 36px; height: 4px; border-radius: 3px;
+  background: var(--linha-forte); margin: 8px auto -4px; flex: none;
+}
+@media (min-width: 861px) { .puxador { display: none } }
+
+/* ============================================================
+   KARDEX — a linha do tempo do item
+   ============================================================ */
+
+.kardex { display: flex; flex-direction: column; position: relative }
+.kardex::before {
+  content: ""; position: absolute; left: 15px; top: 12px; bottom: 12px;
+  width: 2px; background: var(--linha);
+}
+.kardex-linha {
+  display: flex; gap: 12px; padding: 9px 0; position: relative;
+}
+.kardex-bola {
+  width: 32px; height: 32px; flex: none; border-radius: 50%;
+  display: grid; place-items: center; z-index: 1;
+  background: var(--superficie-2);
+  box-shadow: 0 0 0 3px var(--app);
+}
+.kardex-linha.entrada .kardex-bola { color: var(--entrada); background: color-mix(in srgb, var(--entrada) 18%, var(--superficie-2)) }
+.kardex-linha.saida   .kardex-bola { color: var(--saida);   background: color-mix(in srgb, var(--saida) 18%, var(--superficie-2)) }
+.kardex-linha.ajuste  .kardex-bola { color: var(--atencao-txt) }
+.kardex-corpo { flex: 1; min-width: 0; padding-top: 3px }
+.kardex-qtd {
+  font-weight: 700; font-variant-numeric: tabular-nums; font-size: .95rem;
+}
+.kardex-qtd.mais  { color: var(--entrada) }
+.kardex-qtd.menos { color: var(--saida) }
+.kardex-quando { font-size: .74rem; color: var(--sutil); white-space: nowrap }
+.kardex-saldo {
+  font-size: .74rem; color: var(--sutil); font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   TABELA — só no computador; no celular vira lista
+   ============================================================ */
+
+.rolagem-x { overflow-x: auto; -webkit-overflow-scrolling: touch }
+table.dados { width: 100%; border-collapse: collapse; font-size: .88rem }
+table.dados th {
+  text-align: left; font-size: .72rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--sutil);
+  padding: 8px 10px; border-bottom: 1px solid var(--linha); white-space: nowrap;
+}
+table.dados td { padding: 10px; border-bottom: 1px solid var(--linha) }
+table.dados tr:last-child td { border-bottom: 0 }
+table.dados tbody tr:hover { background: var(--superficie-2) }
+table.dados th.num, table.dados td.num { text-align: right }
+
+/* Barra proporcional dentro da célula — curva ABC, consumo por frente. */
+.barra-dado {
+  height: 22px; border-radius: 5px; background: rgb(var(--acento-rgb) / .18);
+  position: relative; min-width: 4px;
+}
+.barra-dado > i {
+  display: block; height: 100%; border-radius: 5px; background: var(--acento);
+}
+
+/* ============================================================
+   ESTADOS
+   ============================================================ */
+
+.vazio {
+  text-align: center; padding: 44px 20px; color: var(--sutil);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.vazio svg { color: var(--linha-forte); width: 42px; height: 42px }
+.vazio h3 { color: var(--fraco); font-weight: 600 }
+.vazio p { font-size: .88rem; max-width: 340px }
+
+.esqueleto {
+  background: linear-gradient(90deg, var(--superficie) 25%, var(--superficie-2) 50%, var(--superficie) 75%);
+  background-size: 200% 100%;
+  animation: brilho 1.3s infinite linear;
+  border-radius: var(--raio-sm);
+}
+@keyframes brilho { to { background-position: -200% 0 } }
+@media (prefers-reduced-motion: reduce) { .esqueleto { animation: none } }
+
+.recado {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--barra) + 18px); z-index: 100;
+  background: var(--elevado); color: var(--conteudo);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio); box-shadow: var(--sombra);
+  padding: 12px 16px; font-size: .9rem; font-weight: 550;
+  display: flex; align-items: center; gap: 10px;
+  max-width: min(420px, calc(100vw - 28px));
+  animation: subir-recado .2s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes subir-recado { from { transform: translate(-50%, 14px); opacity: 0 } }
+.recado.ok      { border-color: var(--ok);      color: var(--ok-txt) }
+.recado.erro    { border-color: var(--critico); color: var(--critico-txt) }
+@media (min-width: 861px) { .recado { bottom: 22px } }
+
+/* ============================================================
+   TOUR — realce por sombra gigante em volta do alvo
+   ============================================================ */
+
+.tour-fundo { position: fixed; inset: 0; z-index: 90; background: rgb(0 0 0 / .05) }
+.tour-alvo {
+  position: fixed; z-index: 91; border-radius: var(--raio);
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / .68), 0 0 0 3px var(--acento);
+  pointer-events: none; transition: all .25s cubic-bezier(.2,.8,.2,1);
+}
+.tour-balao {
+  position: fixed; z-index: 92;
+  width: min(330px, calc(100vw - 28px));
+  background: var(--elevado); border: 1px solid var(--linha-forte);
+  border-radius: var(--raio); box-shadow: var(--sombra); padding: 15px;
+}
+.tour-balao h3 { margin-bottom: 5px; font-size: .98rem }
+.tour-balao p { font-size: .87rem; color: var(--fraco) }
+.tour-passo { font-size: .72rem; color: var(--sutil); font-weight: 650 }
+
+/* ============================================================
+   CÂMERA — leitura de QR e código de barras
+   ============================================================ */
+
+.camera-caixa {
+  position: relative; border-radius: var(--raio); overflow: hidden;
+  background: #000; aspect-ratio: 4/3; width: 100%;
+}
+.camera-caixa video { width: 100%; height: 100%; object-fit: cover; display: block }
+.camera-mira {
+  position: absolute; inset: 16% 12%;
+  border: 2px solid rgb(255 255 255 / .85); border-radius: var(--raio);
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / .35);
+}
+.camera-mira::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 2px;
+  background: var(--acento); box-shadow: 0 0 12px var(--acento);
+  animation: varrer 2.2s ease-in-out infinite;
+}
+@keyframes varrer { 0%,100% { top: 6% } 50% { top: 94% } }
+@media (prefers-reduced-motion: reduce) { .camera-mira::after { animation: none; top: 50% } }
+
+/* ============================================================
+   ETIQUETA — folha A4 para imprimir
+   O QR sai desde o primeiro dia: imprimir é barato agora, e ler com a
+   câmera entra depois sem trocar etiqueta nenhuma.
+   ============================================================ */
+
+.folha-etiquetas {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm;
+  background: #fff; color: #000; padding: 8mm;
+}
+.etiqueta {
+  border: 1px dashed #bbb; border-radius: 3mm;
+  padding: 3mm; display: flex; gap: 3mm; align-items: center;
+  break-inside: avoid; min-height: 26mm;
+}
+.etiqueta svg, .etiqueta img { width: 20mm; height: 20mm; flex: none }
+.etiqueta-corpo { min-width: 0; flex: 1 }
+.etiqueta-nome {
+  font-weight: 700; font-size: 8.5pt; line-height: 1.2;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.etiqueta-cod { font-family: var(--mono); font-size: 8pt; margin-top: 1mm }
+.etiqueta-loc { font-size: 7pt; color: #555; margin-top: .5mm }
+
+@media print {
+  @page { size: A4; margin: 0 }
+  body { background: #fff }
+  .lateral, .topo, .barra-baixo, .nao-imprime { display: none !important }
+  .conteudo { padding: 0; max-width: none }
+  .folha-etiquetas { padding: 8mm }
+  .etiqueta { border-color: #ddd }
+  .cartao { border: 1px solid #ddd; break-inside: avoid }
+}
+
+/* ============================================================
+   AUXILIARES
+   ============================================================ */
+
+.separador { height: 1px; background: var(--linha); border: 0; margin: 4px 0 }
+.rolagem-lado {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+}
+.rolagem-lado > * { scroll-snap-align: start; flex: none }
+.so-celular { display: none }
+@media (max-width: 860px) {
+  .so-celular { display: initial }
+  .so-computador { display: none !important }
+}
+.aviso {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 14px; border-radius: var(--raio-sm);
+  background: var(--atencao-fundo); color: var(--atencao-txt);
+  font-size: .87rem; box-shadow: inset 0 0 0 1px currentColor;
+}
+.aviso.critico { background: var(--critico-fundo); color: var(--critico-txt) }
+.aviso.info    { background: rgb(var(--acento-rgb) / .12); color: var(--acento) }
+.aviso svg { flex: none; margin-top: 1px }
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+
+.tela-login {
+  min-height: 100dvh; display: grid; place-items: center; padding: 22px;
+  background:
+    radial-gradient(1000px 500px at 50% -10%, rgb(var(--acento-rgb) / .13), transparent 65%),
+    var(--app);
+}
+.caixa-login {
+  width: min(400px, 100%);
+  background: var(--superficie); border: 1px solid var(--linha);
+  border-radius: var(--raio-lg); padding: 28px; box-shadow: var(--sombra);
+}
+.caixa-login .marca { justify-content: center; padding: 0 0 20px }
+.caixa-login .marca-selo { width: 46px; height: 46px; font-size: 1.1rem }

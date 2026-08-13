@@ -1,0 +1,2863 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="escuro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12100e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.json">
+<title>Almoxarifado</title>
+<style>/*ESTILO*/</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN
+     ============================================================ -->
+<div id="tela-login" class="tela-login">
+  <form class="caixa-login" id="form-login">
+    <div class="marca">
+      <div class="marca-selo" id="login-selo">AL</div>
+      <div>
+        <div class="marca-nome">Almoxarifado</div>
+        <div class="marca-sub">controle de estoque de obra</div>
+      </div>
+    </div>
+
+    <div class="pilha">
+      <div class="campo">
+        <label for="cx-empresa">Empresa</label>
+        <input id="cx-empresa" name="empresa" autocomplete="organization" value="demo" required>
+      </div>
+      <div class="campo">
+        <label for="cx-login">Usuário</label>
+        <input id="cx-login" name="login" autocomplete="username" autocapitalize="none" required>
+      </div>
+      <div class="campo">
+        <label for="cx-senha">Senha</label>
+        <input id="cx-senha" name="senha" type="password" autocomplete="current-password" required>
+      </div>
+      <div id="login-erro" class="aviso critico" hidden></div>
+      <button class="btn primario grande largo" type="submit" id="bt-entrar">Entrar</button>
+    </div>
+
+    <!-- Atalhos da demonstração. Some sozinho fora da empresa `demo`:
+         é apoio de apresentação, não porta dos fundos. -->
+    <div id="atalhos-demo" hidden>
+      <hr class="separador" style="margin:18px 0 12px">
+      <div class="rotulo-secao" style="margin-bottom:8px">Ver como</div>
+      <div class="chips" id="lista-atalhos"></div>
+    </div>
+  </form>
+</div>
+
+<!-- ============================================================
+     APLICAÇÃO
+     ============================================================ -->
+<div id="app" class="tudo" hidden>
+  <aside class="lateral">
+    <div class="marca">
+      <div class="marca-selo" id="marca-selo">AL</div>
+      <div style="min-width:0">
+        <div class="marca-nome uma-linha" id="marca-nome">Almoxarifado</div>
+        <div class="marca-sub uma-linha" id="marca-sub"></div>
+      </div>
+    </div>
+    <nav id="nav-lateral"></nav>
+    <div class="nav-espaco"></div>
+    <button class="nav-item" id="bt-tema"></button>
+    <button class="nav-item" id="bt-ajuda"></button>
+    <button class="nav-item" id="bt-sair"></button>
+  </aside>
+
+  <main class="principal">
+    <header class="topo">
+      <button class="btn-icone so-celular" id="bt-marca-celular"></button>
+      <h1 id="titulo-tela" class="cresce uma-linha">Início</h1>
+      <button class="btn-icone" id="bt-escanear" title="Escanear etiqueta"></button>
+      <button class="btn-icone so-computador" id="bt-ajuda-topo" title="Como usar">?</button>
+    </header>
+    <div class="conteudo" id="conteudo"></div>
+  </main>
+
+  <nav class="barra-baixo" id="nav-baixo"></nav>
+</div>
+
+<dialog class="folha" id="folha"></dialog>
+
+<script>
+"use strict";
+
+/* ============================================================
+   ÍCONES — traço, nunca emoji.
+   Vêm inlinados: a página não busca nada na rede, porque o galpão
+   tem sinal ruim e às vezes nenhum.
+   ============================================================ */
+const ICONES = {
+  inicio:    "M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5",
+  busca:     "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.35-4.35",
+  escanear:  "M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18",
+  caixa:     "M21 8v8a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8ZM3.3 7 12 12l8.7-5M12 22V12",
+  caixas:    "M7 16.5 2 13.7V8.3L7 5.5l5 2.8v5.4ZM17 16.5l-5-2.8V8.3l5-2.8 5 2.8v5.4ZM12 21.5 7 18.7v-5.4l5-2.8 5 2.8v5.4Z",
+  ferramenta:"M14.7 6.3a4 4 0 0 0 5.3 5.3l-8.4 8.4a2.8 2.8 0 0 1-4-4ZM14.7 6.3l3-3M17.7 3.3l3 3-3 3",
+  lista:     "M9 5h9M9 12h9M9 19h9M4.5 5h.01M4.5 12h.01M4.5 19h.01",
+  grafico:   "M3 3v18h18M7 15V9M12 17V6M17 13v-4",
+  ajuste:    "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6",
+  mais:      "M12 5v14M5 12h14",
+  menos:     "M5 12h14",
+  entrada:   "M12 19V5M5 12l7-7 7 7",
+  saida:     "M12 5v14M19 12l-7 7-7-7",
+  alerta:    "M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z",
+  certo:     "M20 6 9 17l-5-5",
+  fechar:    "M18 6 6 18M6 6l12 12",
+  camera:    "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2ZM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
+  imprimir:  "M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6Z",
+  baixar:    "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3",
+  direita:   "M9 18l6-6-6-6",
+  esquerda:  "M15 18l-6-6 6-6",
+  sair:      "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+  sol:       "M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4",
+  lua:       "M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z",
+  gente:     "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
+  lugar:     "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0ZM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+  relogio:   "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 6v6l4 2",
+  calendario:"M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z",
+  troca:     "M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4",
+  historico: "M3 3v5h5M3.05 13A9 9 0 1 0 6 5.3L3 8M12 7v5l4 2",
+  ajustes:   "M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM12 8v4l2 2",
+  filtro:    "M22 3H2l8 9.5V19l4 2v-8.5Z",
+  etiqueta:  "M3 5h6v6H3ZM15 5h6v6h-6ZM3 15h6v6H3ZM15 15h2M19 15h2M15 19h2M19 19h2",
+  cadastro:  "M20.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.1a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-3-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9h-.1a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.1-3l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2v-.1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 3 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+  caminhao:  "M1 3h15v13H1ZM16 8h4l3 3v5h-7M5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z",
+  vazio:     "M2 9h20M2 9l2-5h16l2 5M2 9v11a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V9M9 14h6",
+  ajuda:     "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01",
+  papel:     "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8ZM14 2v6h6M16 13H8M16 17H8M10 9H8",
+  voz:       "M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3ZM19 10v2a7 7 0 0 1-14 0v-2M12 19v4",
+  lixo:      "M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6",
+};
+
+function icone(nome, tamanho = 20) {
+  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  s.setAttribute("viewBox", "0 0 24 24");
+  s.setAttribute("width", tamanho); s.setAttribute("height", tamanho);
+  s.setAttribute("fill", "none"); s.setAttribute("stroke", "currentColor");
+  s.setAttribute("stroke-width", "2");
+  s.setAttribute("stroke-linecap", "round"); s.setAttribute("stroke-linejoin", "round");
+  const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  p.setAttribute("d", ICONES[nome] || ICONES.caixa);
+  s.appendChild(p);
+  return s;
+}
+
+/* ============================================================
+   DOM — construtor mínimo.
+   Tudo entra por textContent: nome de item vem do banco e pode ter
+   `<` ou `&`. Montar tela com innerHTML é como se cola HTML de dado
+   de cliente dentro da página sem querer.
+   ============================================================ */
+function h(tag, props = {}, ...filhos) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "texto") e.textContent = v;
+    else if (k === "html") e.innerHTML = v;          // só com texto que EU montei
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "dados") Object.assign(e.dataset, v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const f of filhos.flat(9)) {
+    if (f === null || f === undefined || f === false) continue;
+    e.appendChild(f instanceof Node ? f : document.createTextNode(String(f)));
+  }
+  return e;
+}
+const $ = (s) => document.querySelector(s);
+const limpar = (e) => { while (e.firstChild) e.removeChild(e.firstChild); return e };
+
+/* ============================================================
+   FORMATO
+   ============================================================ */
+const nf = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
+const nfMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+const num = (n) => nf.format(Number(n) || 0);
+const dinheiro = (n) => nfMoeda.format(Number(n) || 0);
+
+// "Texto de gente": nunca "item(ns)".
+const plural = (n, um, muitos) => `${num(n)} ${Number(n) === 1 ? um : muitos}`;
+
+function quando(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
+  const min = Math.round((Date.now() - d) / 60000);
+  if (min < 1) return "agora";
+  if (min < 60) return `há ${min} min`;
+  if (min < 1440) return `há ${Math.round(min / 60)} h`;
+  const dias = Math.round(min / 1440);
+  if (dias < 7) return `há ${dias} ${dias === 1 ? "dia" : "dias"}`;
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+const dataHora = (iso) => iso
+  ? new Date(iso.endsWith("Z") ? iso : iso + "Z")
+      .toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit",
+                                 hour: "2-digit", minute: "2-digit" })
+  : "—";
+
+/* Semáforo do estoque. Cor tem significado fixo em toda tela do sistema:
+   vermelho abaixo do mínimo, âmbar chegando perto, verde folgado. */
+function nivel(saldo, minimo) {
+  // 0,001 e não 0: resíduo de ponto flutuante deixa saldos como 4,5e-13,
+  // que a tela mostra como "0". Se a cor discordar do número lido, quem
+  // está olhando conclui — com razão — que o sistema está errado.
+  if (saldo < 0.001) return "critico";
+  if (!minimo || minimo <= 0) return "";
+  if (saldo <= minimo) return "critico";
+  if (saldo <= minimo * 1.3) return "atencao";
+  return "ok";
+}
+
+/* ============================================================
+   ESTADO E API
+   ============================================================ */
+const estado = {
+  token: localStorage.getItem("almox.token") || null,
+  eu: null,
+  cadastro: null,
+  tela: "inicio",
+  busca: { q: "", filtros: new Set(), categoria: null },
+  recentes: JSON.parse(localStorage.getItem("almox.recentes") || "[]"),
+};
+
+async function api(rota, opcoes = {}) {
+  const cab = { "content-type": "application/json" };
+  if (estado.token) cab.authorization = "Bearer " + estado.token;
+  if (opcoes.cru) delete cab["content-type"];
+
+  const r = await fetch("/api" + rota, {
+    method: opcoes.metodo || (opcoes.corpo ? "POST" : "GET"),
+    headers: opcoes.cru ? { authorization: cab.authorization, "content-type": opcoes.tipo } : cab,
+    body: opcoes.cru ? opcoes.cru : (opcoes.corpo ? JSON.stringify(opcoes.corpo) : undefined),
+  });
+
+  if (r.status === 204) return null;
+  const tipo = r.headers.get("content-type") || "";
+  const dados = tipo.includes("json") ? await r.json() : await r.text();
+
+  if (!r.ok) {
+    /* 401 quer dizer duas coisas. No login é senha errada; em qualquer outra
+       rota é sessão vencida. Confundir manda a pessoa "entrar de novo" bem
+       na hora em que ela está tentando entrar — e ela conclui que o sistema
+       quebrou, não que errou a senha. */
+    if (r.status === 401 && rota !== "/login") {
+      estado.token = null;
+      localStorage.removeItem("almox.token");
+      telaLogin();
+      throw new Error("sessão vencida");
+    }
+    const e = new Error(dados?.erro || "algo deu errado");
+    e.status = r.status;
+    throw e;
+  }
+  return dados;
+}
+
+/* ============================================================
+   RECADO — nada de alert(): vem em inglês, é minúsculo e assusta
+   ============================================================ */
+let recadoAtual = null;
+function recado(texto, tipo = "") {
+  if (recadoAtual) recadoAtual.remove();
+  const e = h("div", { class: "recado " + tipo, role: "status" },
+    icone(tipo === "erro" ? "alerta" : tipo === "ok" ? "certo" : "ajuda", 18),
+    h("span", { texto }));
+  document.body.appendChild(e);
+  recadoAtual = e;
+  setTimeout(() => { if (recadoAtual === e) { e.remove(); recadoAtual = null } }, 3800);
+}
+
+/* ============================================================
+   FOLHA (dialog)
+
+   ⚠️ Folhas encadeadas não fecham entre si. `abrir()` TROCA o conteúdo do
+   dialog que já está aberto. Fechar e reabrir faz o evento `close` da folha
+   anterior chegar atrasado e cancelar a seguinte — o fluxo morre no meio,
+   sem mensagem nenhuma. Quem responde clicando chama `solta()`; só o ✕, o
+   fundo e o Esc fecham de verdade.
+   ============================================================ */
+let aoFechar = null;
+
+function abrir({ titulo, corpo, pe, aoResponder }) {
+  const dlg = $("#folha");
+  aoFechar = aoResponder || null;
+
+  const caixa = h("div", { class: "folha-caixa" },
+    h("div", { class: "puxador" }),
+    h("div", { class: "folha-cab" },
+      h("h2", { texto: titulo || "" }),
+      h("button", { class: "btn-icone", "aria-label": "Fechar", onclick: () => dlg.close() },
+        icone("fechar", 20))),
+    h("div", { class: "folha-corpo" }, corpo),
+    pe ? h("div", { class: "folha-pe" }, pe) : null);
+
+  limpar(dlg).appendChild(caixa);
+  if (!dlg.open) dlg.showModal();
+  const foco = caixa.querySelector("input,select,textarea,button.primario");
+  if (foco && window.matchMedia("(min-width: 861px)").matches) foco.focus();
+  return dlg;
+}
+
+/* Responde e fecha sem disparar o cancelamento. */
+function solta(valor) {
+  const fn = aoFechar;
+  aoFechar = null;
+  $("#folha").close();
+  if (fn) fn(valor);
+}
+
+$("#folha").addEventListener("close", () => {
+  const fn = aoFechar;
+  aoFechar = null;
+  if (fn) fn(null);
+});
+// Clicar no fundo fecha. O <dialog> ocupa a tela toda, então o alvo do
+// clique é o próprio dialog só quando é fora da caixa.
+$("#folha").addEventListener("click", (ev) => { if (ev.target.id === "folha") $("#folha").close() });
+
+const perguntar = (titulo, texto, confirmar = "Confirmar", perigo = false) =>
+  new Promise((ok) => abrir({
+    titulo,
+    corpo: h("p", { class: "fraco", texto }),
+    aoResponder: (v) => ok(v === true),
+    pe: [
+      h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta(false) }),
+      h("button", { class: "btn " + (perigo ? "perigo" : "primario"), texto: confirmar,
+                    onclick: () => solta(true) }),
+    ],
+  }));
+
+const escolher = (titulo, opcoes) =>
+  new Promise((ok) => abrir({
+    titulo,
+    corpo: h("div", { class: "pilha apertada" },
+      opcoes.map((o) => h("button", { class: "linha", onclick: () => solta(o.valor) },
+        o.icone ? h("div", { class: "linha-foto" }, icone(o.icone, 22)) : null,
+        h("div", { class: "linha-corpo" },
+          h("div", { class: "linha-nome", texto: o.rotulo }),
+          o.nota ? h("div", { class: "linha-meta" }, h("span", { texto: o.nota })) : null),
+        icone("direita", 18)))),
+    aoResponder: ok,
+  }));
+
+const pedirTexto = (titulo, rotulo, valorInicial = "", multilinha = false) =>
+  new Promise((ok) => {
+    const campo = h(multilinha ? "textarea" : "input", { value: valorInicial });
+    if (!multilinha) campo.value = valorInicial;
+    abrir({
+      titulo,
+      corpo: h("div", { class: "campo" }, h("label", { texto: rotulo }), campo),
+      aoResponder: ok,
+      pe: [
+        h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta(null) }),
+        h("button", { class: "btn primario", texto: "Salvar",
+                      onclick: () => solta(campo.value.trim() || null) }),
+      ],
+    });
+  });
+
+/* Teclado numérico grande. Substitui o prompt() do navegador na hora de
+   digitar quantidade — quem está com a peça na mão, de luva, não acerta um
+   campo de 40px nem enxerga o diálogo minúsculo do sistema. */
+const pedirNumero = (titulo, unidade = "", inicial = "", nota = "") =>
+  new Promise((ok) => {
+    let valor = String(inicial || "");
+    const visor = h("div", { class: "visor" });
+    const pintar = () => {
+      limpar(visor);
+      visor.appendChild(document.createTextNode(valor || "0"));
+      if (unidade) visor.appendChild(h("small", { texto: unidade }));
+    };
+    const digitar = (d) => {
+      if (d === "apagar") valor = valor.slice(0, -1);
+      else if (d === ",") { if (!valor.includes(",")) valor = (valor || "0") + "," }
+      else valor = (valor === "0" ? "" : valor) + d;
+      pintar();
+    };
+    pintar();
+
+    const teclas = ["1","2","3","4","5","6","7","8","9",",","0","apagar"];
+    abrir({
+      titulo,
+      corpo: h("div", { class: "pilha" },
+        nota ? h("div", { class: "aviso info" }, icone("ajuda", 16), h("span", { texto: nota })) : null,
+        visor,
+        h("div", { class: "teclado" },
+          teclas.map((t) => h("button", {
+            type: "button", onclick: () => digitar(t),
+            "aria-label": t === "apagar" ? "Apagar" : t,
+          }, t === "apagar" ? icone("esquerda", 22) : t)))),
+      aoResponder: ok,
+      pe: [
+        h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta(null) }),
+        h("button", { class: "btn primario", texto: "Confirmar", onclick: () => {
+          const n = parseFloat(valor.replace(",", "."));
+          if (!Number.isFinite(n) || n <= 0) return recado("digite uma quantidade", "erro");
+          solta(n);
+        }}),
+      ],
+    });
+  });
+
+/* ============================================================
+   TEMA
+   ============================================================ */
+function trocarTema(forcado) {
+  const atual = document.documentElement.dataset.tema;
+  const novo = forcado || (atual === "escuro" ? "claro" : "escuro");
+  document.documentElement.dataset.tema = novo;
+  localStorage.setItem("almox.tema", novo);
+  const bt = $("#bt-tema");
+  if (bt) {
+    limpar(bt).append(icone(novo === "escuro" ? "sol" : "lua", 18),
+      h("span", { texto: novo === "escuro" ? "Tema claro" : "Tema escuro" }));
+  }
+}
+trocarTema(localStorage.getItem("almox.tema") || "escuro");
+
+/* A cor da empresa vem do cadastro e pinta identidade: topo, botão
+   principal, aba ativa. NUNCA pinta o semáforo de estoque — semáforo que
+   muda de cor por cliente não significa mais nada.
+   O texto por cima é escolhido por luminância, senão marca clara fica
+   ilegível em cima do próprio botão. */
+function pintarAcento(cor) {
+  if (!/^#[0-9a-f]{6}$/i.test(cor || "")) return;
+  const r = parseInt(cor.slice(1, 3), 16),
+        g = parseInt(cor.slice(3, 5), 16),
+        b = parseInt(cor.slice(5, 7), 16);
+  const raiz = document.documentElement.style;
+  raiz.setProperty("--acento", cor);
+  raiz.setProperty("--acento-rgb", `${r}, ${g}, ${b}`);
+  const luz = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  raiz.setProperty("--acento-txt", luz > 0.6 ? "#1b1713" : "#ffffff");
+}
+</script>
+<script>
+"use strict";
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+
+function telaLogin() {
+  $("#app").hidden = true;
+  $("#tela-login").hidden = false;
+  $("#login-erro").hidden = true;
+  const s = $("#cx-senha"); if (s) s.value = "";
+  mostrarAtalhosDemo();
+}
+
+/* A empresa `demo` é a obra de mentira, cheia, feita para mostrar o sistema.
+   Os atalhos só aparecem nela — em empresa de cliente, some sozinho. */
+async function mostrarAtalhosDemo() {
+  const empresa = $("#cx-empresa").value.trim().toLowerCase();
+  const caixa = $("#atalhos-demo");
+  caixa.hidden = empresa !== "demo";
+  if (caixa.hidden) return;
+
+  const papeis = [
+    { login: "almoxarife",  rotulo: "Almoxarife",  nota: "movimenta e entrega" },
+    { login: "encarregado", rotulo: "Encarregado", nota: "pede material" },
+    { login: "engenheiro",  rotulo: "Engenheiro",  nota: "gestão da obra" },
+    { login: "dono",        rotulo: "Dono",        nota: "tudo, com valores" },
+  ];
+  limpar($("#lista-atalhos")).append(...papeis.map((p) =>
+    h("button", { class: "chip", type: "button", title: p.nota, onclick: () => {
+      $("#cx-login").value = p.login;
+      $("#cx-senha").value = "demo";
+      $("#form-login").requestSubmit();
+    }}, p.rotulo)));
+}
+$("#cx-empresa").addEventListener("input", mostrarAtalhosDemo);
+
+$("#form-login").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const bt = $("#bt-entrar");
+  bt.disabled = true; bt.textContent = "Entrando…";
+  try {
+    const r = await api("/login", { corpo: {
+      empresa: $("#cx-empresa").value.trim(),
+      login: $("#cx-login").value.trim(),
+      senha: $("#cx-senha").value,
+    }});
+    estado.token = r.token;
+    estado.eu = r.eu;
+    localStorage.setItem("almox.token", r.token);
+    $("#login-erro").hidden = true;
+    await comecar();
+  } catch (e) {
+    const cx = $("#login-erro");
+    limpar(cx).append(icone("alerta", 16), h("span", { texto: e.message }));
+    cx.hidden = false;
+  } finally {
+    bt.disabled = false; bt.textContent = "Entrar";
+  }
+});
+
+async function sair() {
+  try { await api("/sair", { metodo: "POST" }) } catch {}
+  estado.token = null; estado.eu = null;
+  localStorage.removeItem("almox.token");
+  fecharTour();               // a sobra do tour ficaria por cima do login e travaria tudo
+  telaLogin();
+}
+
+/* ============================================================
+   NAVEGAÇÃO — cada papel abre num lugar diferente, porque cada um
+   chega com uma pergunta diferente na cabeça.
+   ============================================================ */
+
+const TELAS = {
+  inicio:      { rotulo: "Início",     icone: "inicio",     fn: () => telaInicio() },
+  busca:       { rotulo: "Buscar",     icone: "busca",      fn: () => telaBusca() },
+  requisicoes: { rotulo: "Requisições",icone: "lista",      fn: () => telaRequisicoes() },
+  ferramentas: { rotulo: "Ferramentas",icone: "ferramenta", fn: () => telaFerramentas() },
+  movimentos:  { rotulo: "Movimentos", icone: "historico",  fn: () => telaMovimentos() },
+  inventario:  { rotulo: "Inventário", icone: "ajuste",     fn: () => telaInventario() },
+  relatorios:  { rotulo: "Relatórios", icone: "grafico",    fn: () => telaRelatorios() },
+  cadastro:    { rotulo: "Cadastro",   icone: "cadastro",   fn: () => telaCadastro() },
+};
+
+const MENU_POR_PAPEL = {
+  almoxarife:  ["inicio", "busca", "requisicoes", "ferramentas", "inventario", "movimentos"],
+  encarregado: ["inicio", "busca", "requisicoes", "ferramentas"],
+  engenheiro:  ["inicio", "busca", "requisicoes", "ferramentas", "relatorios", "inventario", "movimentos", "cadastro"],
+  admin:       ["inicio", "busca", "requisicoes", "ferramentas", "relatorios", "inventario", "movimentos", "cadastro"],
+};
+
+/* A barra de baixo tem no máximo cinco abas. A sexta faria cada alvo cair
+   abaixo de 60px num celular de 390px — e este é o sistema onde o alvo de
+   dedo é requisito, não preferência. O resto vai em "Mais". */
+const MAX_ABAS = 5;
+
+function montarNavegacao() {
+  const chaves = MENU_POR_PAPEL[estado.eu.papel] || MENU_POR_PAPEL.encarregado;
+
+  const lateral = limpar($("#nav-lateral"));
+  for (const k of chaves) {
+    const t = TELAS[k];
+    lateral.appendChild(h("button", {
+      class: "nav-item", dados: { tela: k }, onclick: () => irPara(k),
+    }, icone(t.icone, 18), h("span", { texto: t.rotulo }),
+       h("span", { class: "conta", dados: { conta: k }, hidden: true })));
+  }
+
+  const baixo = limpar($("#nav-baixo"));
+  const visiveis = chaves.length > MAX_ABAS ? chaves.slice(0, MAX_ABAS - 1) : chaves;
+  for (const k of visiveis) {
+    const t = TELAS[k];
+    baixo.appendChild(h("button", { dados: { tela: k }, onclick: () => irPara(k) },
+      icone(t.icone, 21), h("span", { texto: t.rotulo }),
+      h("span", { class: "conta", dados: { conta: k }, hidden: true })));
+  }
+  if (chaves.length > MAX_ABAS) {
+    const resto = chaves.slice(MAX_ABAS - 1);
+    baixo.appendChild(h("button", { onclick: () => menuMais(resto) },
+      icone("lista", 21), h("span", { texto: "Mais" })));
+  }
+}
+
+async function menuMais(chaves) {
+  const escolha = await escolher("Mais", chaves.map((k) => ({
+    valor: k, rotulo: TELAS[k].rotulo, icone: TELAS[k].icone,
+  })));
+  if (escolha) irPara(escolha);
+}
+
+function marcarAba(tela) {
+  for (const b of document.querySelectorAll("[data-tela]")) {
+    b.setAttribute("aria-current", b.dataset.tela === tela ? "true" : "false");
+  }
+}
+
+async function irPara(tela, ...args) {
+  if (!TELAS[tela]) tela = "inicio";
+  estado.tela = tela;
+  marcarAba(tela);
+  $("#titulo-tela").textContent = TELAS[tela].rotulo;
+  const alvo = limpar($("#conteudo"));
+  alvo.appendChild(esqueleto());
+  try {
+    await TELAS[tela].fn(...args);
+  } catch (e) {
+    limpar($("#conteudo")).appendChild(vazio("alerta", "Não deu para carregar", e.message));
+  }
+}
+
+const esqueleto = () => h("div", { class: "pilha" },
+  [0, 1, 2, 3].map(() => h("div", { class: "esqueleto", style: "height:66px" })));
+
+const vazio = (ic, titulo, texto) => h("div", { class: "vazio" },
+  icone(ic, 40), h("h3", { texto: titulo }), texto ? h("p", { texto }) : null);
+
+/* ============================================================
+   PARTIDA
+
+   ⚠️ `comecar()` roda de novo a cada login na mesma aba, então a montagem
+   da casca tem que ser idempotente. Nada de outerHTML em elemento com id:
+   a primeira execução apaga o id e a segunda estoura.
+   ============================================================ */
+async function comecar() {
+  try {
+    if (!estado.eu) estado.eu = await api("/eu");
+
+    $("#tela-login").hidden = true;
+    $("#app").hidden = false;
+
+    const emp = estado.eu.empresa;
+    pintarAcento(emp.cor);
+    const sigla = emp.logo || emp.nome.slice(0, 2).toUpperCase();
+    $("#marca-selo").textContent = sigla;
+    $("#login-selo").textContent = sigla;
+    $("#marca-nome").textContent = emp.nome;
+    $("#marca-sub").textContent = `${estado.eu.nome} · ${rotuloPapel(estado.eu.papel)}`;
+    document.title = `Almoxarifado — ${emp.nome}`;
+
+    montarNavegacao();
+    trocarTema(document.documentElement.dataset.tema);
+    limpar($("#bt-sair")).append(icone("sair", 18), h("span", { texto: "Sair" }));
+    limpar($("#bt-ajuda")).append(icone("ajuda", 18), h("span", { texto: "Como usar" }));
+    limpar($("#bt-escanear")).appendChild(icone("escanear", 22));
+    limpar($("#bt-marca-celular")).appendChild(icone("caixas", 22));
+
+    estado.cadastro = await api("/cadastro");
+
+    // Etiqueta escaneada com a câmera do próprio celular cai em /e/CODIGO.
+    // A rota entrega esta mesma página, que resolve o código e abre o item.
+    const daEtiqueta = location.pathname.match(/^\/e\/(.+)$/);
+    if (daEtiqueta) {
+      history.replaceState({}, "", "/");
+      await irPara("busca");
+      await resolverCodigo(decodeURIComponent(daEtiqueta[1]));
+    } else {
+      await irPara(estado.eu.papel === "encarregado" ? "inicio" : "inicio");
+    }
+
+    talvezMostrarTour();
+  } catch (e) {
+    /* Duas coisas diferentes que não podem cair no mesmo lugar: sessão
+       caída volta ao login em silêncio; erro de tela precisa aparecer.
+       Engolir as duas juntas vira "digito a senha e não acontece nada". */
+    if (e.message === "sessão vencida" || e.status === 401) { telaLogin(); return }
+    console.error(e);
+    recado("erro ao montar a tela: " + e.message, "erro");
+  }
+}
+
+const rotuloPapel = (p) => ({
+  admin: "Dono", engenheiro: "Engenheiro", almoxarife: "Almoxarife", encarregado: "Encarregado",
+}[p] || p);
+
+$("#bt-sair").addEventListener("click", sair);
+$("#bt-tema").addEventListener("click", () => trocarTema());
+$("#bt-escanear").addEventListener("click", () => escanear());
+$("#bt-marca-celular").addEventListener("click", () => irPara("inicio"));
+$("#bt-ajuda").addEventListener("click", () => comecarTour());
+$("#bt-ajuda-topo").addEventListener("click", () => comecarTour());
+
+/* Atalhos de teclado — o engenheiro usa computador, e `/` para buscar é o
+   detalhe que ele percebe. */
+document.addEventListener("keydown", (ev) => {
+  if ($("#app").hidden) return;
+  const digitando = /input|textarea|select/i.test(ev.target.tagName);
+  if (ev.key === "/" && !digitando) { ev.preventDefault(); irPara("busca") }
+  if (ev.key === "Escape" && !$("#folha").open && estado.tela !== "inicio") irPara("inicio");
+});
+
+/* ============================================================
+   TELA · INÍCIO
+   ============================================================ */
+
+async function telaInicio() {
+  const d = await api("/inicio");
+  const eu = estado.eu;
+  const alvo = limpar($("#conteudo"));
+
+  const cartaoNumero = (rotulo, valor, nota, cor, aoClicar, ic) =>
+    h(aoClicar ? "button" : "div", {
+      class: "indicador " + (cor || ""), onclick: aoClicar,
+    }, h("div", { class: "indicador-rotulo" }, ic ? icone(ic, 14) : null, h("span", { texto: rotulo })),
+       h("div", { class: "indicador-valor", texto: valor }),
+       nota ? h("div", { class: "indicador-nota", texto: nota }) : null);
+
+  const indicadores = [];
+
+  indicadores.push(cartaoNumero(
+    "Abaixo do mínimo", num(d.criticos.n || 0),
+    plural(d.criticos.zerados || 0, "zerado", "zerados"),
+    (d.criticos.n > 0 ? "critico" : "ok"),
+    () => { estado.busca.filtros = new Set(["critico"]); irPara("busca") }, "alerta"));
+
+  if (eu.papel !== "encarregado") {
+    indicadores.push(cartaoNumero(
+      "Requisições na fila", num(d.requisicoes.abertas || 0),
+      d.requisicoes.urgentes
+        ? plural(d.requisicoes.urgentes, "urgente", "urgentes")
+        : "nenhuma urgente",
+      (d.requisicoes.urgentes > 0 ? "atencao" : ""),
+      () => irPara("requisicoes"), "lista"));
+  }
+
+  indicadores.push(cartaoNumero(
+    "Ferramentas na rua", num(d.ferramentas.em_uso || 0),
+    d.ferramentas.atrasadas ? `${d.ferramentas.atrasadas} fora há +7 dias` : "todas no prazo",
+    (d.ferramentas.atrasadas > 0 ? "atencao" : ""),
+    () => irPara("ferramentas"), "ferramenta"));
+
+  if (eu.ve_dinheiro) {
+    indicadores.push(cartaoNumero(
+      "Valor em estoque", dinheiro(d.valor_imobilizado),
+      "custo da última entrada", "destaque",
+      () => abrirRelatorio("abc"), "grafico"));
+  } else {
+    indicadores.push(cartaoNumero(
+      "Movimento de hoje",
+      num((d.hoje.entradas || 0) + (d.hoje.saidas || 0)),
+      `${num(d.hoje.entradas || 0)} entradas · ${num(d.hoje.saidas || 0)} saídas`,
+      "", () => irPara("movimentos"), "historico"));
+  }
+
+  alvo.appendChild(h("div", { class: "grade c4", style: "margin-bottom:16px" }, indicadores));
+
+  // Ações rápidas: o que a pessoa veio fazer, no tamanho do dedo.
+  const acoes = [];
+  if (eu.papel !== "encarregado") {
+    acoes.push(h("button", { class: "btn primario toque cresce", id: "ac-baixa",
+      onclick: () => fluxoMovimento("saida") }, icone("saida", 20), "Dar baixa"));
+    acoes.push(h("button", { class: "btn toque cresce", onclick: () => fluxoMovimento("entrada") },
+      icone("entrada", 20), "Entrada"));
+  } else {
+    acoes.push(h("button", { class: "btn primario toque cresce", onclick: () => novaRequisicao() },
+      icone("mais", 20), "Pedir material"));
+  }
+  acoes.push(h("button", { class: "btn toque", onclick: () => escanear(), id: "ac-escanear" },
+    icone("escanear", 20), h("span", { class: "so-computador" }, "Escanear")));
+  alvo.appendChild(h("div", { class: "acoes", style: "margin-bottom:18px" }, acoes));
+
+  if (d.vencendo > 0 && eu.papel !== "encarregado") {
+    alvo.appendChild(h("button", { class: "aviso", style: "width:100%;margin-bottom:16px",
+      onclick: () => abrirRelatorio("validade") },
+      icone("calendario", 18),
+      h("span", { texto: `${plural(d.vencendo, "lote vence", "lotes vencem")} nos próximos 30 dias` }),
+      icone("direita", 16)));
+  }
+
+  if (d.lista_critica.length) {
+    alvo.appendChild(h("div", { class: "cartao", id: "cx-criticos" },
+      h("div", { class: "cartao-cab" },
+        h("h2", { texto: "Precisa comprar" }),
+        h("button", { class: "btn plano", onclick: () => abrirRelatorio("reposicao") },
+          "Ver lista", icone("direita", 16))),
+      h("div", { class: "lista" }, d.lista_critica.map((i) => linhaItem(i)))));
+  } else {
+    alvo.appendChild(h("div", { class: "cartao" },
+      vazio("certo", "Nenhum item abaixo do mínimo", "O estoque está em dia.")));
+  }
+}
+
+/* ============================================================
+   TELA · BUSCA — a tela principal deste sistema
+
+   Uma caixa só resolve: código, nome, sinônimo, prateleira, código de
+   barras do fabricante e patrimônio de ferramenta. Quem procura material
+   não deveria escolher "onde" procurar antes de procurar.
+   ============================================================ */
+
+let buscaAtraso = null;
+
+async function telaBusca() {
+  const alvo = limpar($("#conteudo"));
+
+  const campo = h("input", {
+    type: "search", id: "cx-busca", value: estado.busca.q, enterkeyhint: "search",
+    autocomplete: "off", autocapitalize: "none", spellcheck: "false",
+    placeholder: "Nome, código, prateleira, patrimônio…",
+    oninput: () => { clearTimeout(buscaAtraso); buscaAtraso = setTimeout(rodarBusca, 220) },
+    onkeydown: (ev) => { if (ev.key === "Enter") { ev.preventDefault(); clearTimeout(buscaAtraso); rodarBusca() } },
+  });
+
+  const caixa = h("div", { class: "busca-caixa", id: "cx-busca-caixa" },
+    icone("busca", 20), campo,
+    reconhecimentoDeVoz() ? h("button", {
+      class: "btn-icone", title: "Buscar falando", "aria-label": "Buscar falando",
+      onclick: () => buscarFalando(campo),
+    }, icone("voz", 20)) : null,
+    h("button", { class: "btn-icone", title: "Escanear etiqueta", "aria-label": "Escanear",
+                  onclick: () => escanear() }, icone("escanear", 20)),
+    h("kbd", { class: "atalho", texto: "/" }));
+
+  const chips = h("div", { class: "chips", id: "cx-chips", style: "margin-top:12px" });
+  const resultado = h("div", { id: "cx-resultado", style: "margin-top:4px" });
+
+  alvo.append(caixa, chips, resultado);
+
+  const facetas = await api("/busca/facetas");
+  montarChips(chips, facetas);
+  await rodarBusca();
+
+  if (window.matchMedia("(min-width: 861px)").matches) campo.focus();
+}
+
+/* Os filtros são como o engenheiro pensa — "o que está zerado", "o que
+   não anda" — e não como o banco está organizado. Cada um mostra quantos
+   são ANTES de clicar: filtro que leva a lista vazia é uma viagem perdida. */
+function montarChips(caixa, facetas) {
+  limpar(caixa);
+  const c = facetas.contagem || {};
+  const definicoes = [
+    { id: "critico",    rotulo: "Abaixo do mínimo", n: c.critico, cor: "critico" },
+    { id: "zerado",     rotulo: "Zerado",           n: c.zerado,  cor: "critico" },
+    { id: "ferramenta", rotulo: "Ferramentas",      n: c.ferramenta },
+    { id: "consumo",    rotulo: "Consumo",          n: c.consumo },
+    { id: "parado",     rotulo: "Parado 90 dias",   n: c.parado,  cor: "atencao" },
+  ];
+
+  for (const d of definicoes) {
+    if (!d.n) continue;
+    const ligado = estado.busca.filtros.has(d.id);
+    caixa.appendChild(h("button", {
+      class: "chip " + (d.cor || ""), "aria-pressed": String(ligado),
+      onclick: (ev) => {
+        estado.busca.filtros.has(d.id)
+          ? estado.busca.filtros.delete(d.id)
+          : estado.busca.filtros.add(d.id);
+        ev.currentTarget.setAttribute("aria-pressed",
+          String(estado.busca.filtros.has(d.id)));
+        rodarBusca();
+      },
+    }, h("span", { texto: d.rotulo }), h("span", { class: "conta", texto: num(d.n) })));
+  }
+
+  if (facetas.categorias?.length) {
+    for (const cat of facetas.categorias) {
+      if (!cat.n) continue;
+      const ligado = estado.busca.categoria === cat.id;
+      caixa.appendChild(h("button", {
+        class: "chip", "aria-pressed": String(ligado),
+        onclick: (ev) => {
+          estado.busca.categoria = estado.busca.categoria === cat.id ? null : cat.id;
+          for (const b of caixa.querySelectorAll(".chip")) {
+            if (b !== ev.currentTarget && b.dataset.cat) b.setAttribute("aria-pressed", "false");
+          }
+          ev.currentTarget.setAttribute("aria-pressed", String(estado.busca.categoria === cat.id));
+          rodarBusca();
+        },
+        dados: { cat: cat.id },
+      }, h("span", { texto: cat.nome }), h("span", { class: "conta", texto: num(cat.n) })));
+    }
+  }
+}
+
+async function rodarBusca() {
+  const campo = $("#cx-busca");
+  if (!campo) return;
+  estado.busca.q = campo.value.trim();
+  const caixa = $("#cx-resultado");
+  if (!caixa) return;
+
+  const p = new URLSearchParams();
+  if (estado.busca.q) p.set("q", estado.busca.q);
+  if (estado.busca.filtros.size) p.set("filtros", [...estado.busca.filtros].join(","));
+  if (estado.busca.categoria) p.set("categoria", estado.busca.categoria);
+
+  // Sem termo e sem filtro: mostra o que foi escaneado por último. No
+  // galpão, o item de agora costuma ser o mesmo de dez minutos atrás.
+  if (!p.toString() && estado.recentes.length) {
+    limpar(caixa).append(
+      h("div", { class: "busca-grupo-titulo", texto: "Vistos recentemente" }),
+      h("div", { class: "lista" }, estado.recentes.slice(0, 8).map((r) =>
+        h("button", { class: "linha", onclick: () => abrirItem(r.id) },
+          h("div", { class: "linha-foto" }, icone("caixa", 20)),
+          h("div", { class: "linha-corpo" },
+            h("div", { class: "linha-nome", texto: r.nome }),
+            h("div", { class: "linha-meta" }, h("span", { class: "mono", texto: r.codigo }))),
+          icone("direita", 18)))));
+    return;
+  }
+
+  const r = await api("/busca?" + p.toString());
+
+  limpar(caixa);
+
+  // Código exato ganha de relevância de texto: quem escaneou a etiqueta ou
+  // digitou o código quer AQUELE item, não o mais parecido.
+  if (r.exato && r.itens.length === 1) {
+    abrirItem(r.itens[0].id);
+    return;
+  }
+
+  if (!r.itens.length && !r.ferramentas.length) {
+    caixa.appendChild(vazio("busca", "Nada encontrado",
+      estado.busca.q
+        ? `Nenhum item para "${estado.busca.q}". Tente o código da etiqueta, ou parte do nome.`
+        : "Nenhum item com esses filtros."));
+    if (estado.busca.q && ["admin", "engenheiro"].includes(estado.eu.papel)) {
+      caixa.appendChild(h("div", { class: "centro" },
+        h("button", { class: "btn primario", onclick: () => formItem(null, estado.busca.q) },
+          icone("mais", 18), "Cadastrar este item")));
+    }
+    return;
+  }
+
+  if (r.itens.length) {
+    caixa.append(
+      h("div", { class: "busca-grupo-titulo",
+                 texto: `Materiais · ${plural(r.itens.length, "resultado", "resultados")}` }),
+      h("div", { class: "lista" }, r.itens.map((i) => linhaItem(i))));
+  }
+
+  if (r.ferramentas.length) {
+    caixa.append(
+      h("div", { class: "busca-grupo", style: "margin-top:18px" },
+        h("div", { class: "busca-grupo-titulo", texto: "Ferramentas" }),
+        h("div", { class: "lista" }, r.ferramentas.map((f) => linhaFerramenta(f)))));
+  }
+
+  if (r.itens.length >= 40) {
+    caixa.appendChild(h("p", { class: "sutil peq centro", style: "margin-top:12px",
+      texto: "Mostrando os 40 primeiros — refine a busca para ver o resto." }));
+  }
+}
+
+/* A linha mais repetida do sistema inteiro. */
+function linhaItem(i) {
+  const n = nivel(i.saldo, i.estoque_minimo);
+  /* Ordem por utilidade no galpão: ONDE está, depois QUAL é. A categoria
+     entra por último e some no celular — ela já está nos chips de filtro,
+     e é justamente ela que empurrava o código para uma segunda linha,
+     deixando cada resultado 20px mais alto sem informar nada novo. */
+  const meta = [];
+  if (i.localizacao) meta.push(h("span", { texto: i.localizacao }));
+  meta.push(h("span", { class: "mono", texto: i.codigo }));
+  if (i.categoria) meta.push(h("span", { class: "so-computador", texto: i.categoria }));
+  if (i.tipo === "ferramenta") meta.push(h("span", { class: "selo", texto: "ferramenta" }));
+
+  // O separador some junto com o que ele separa, senão sobra um "·" solto
+  // no fim da linha no celular.
+  const comSeparador = [];
+  meta.forEach((m, k) => {
+    if (k) {
+      const escondido = m.classList.contains("so-computador");
+      comSeparador.push(h("span", { class: "sep" + (escondido ? " so-computador" : ""),
+                                    texto: "·" }));
+    }
+    comSeparador.push(m);
+  });
+
+  const alvoMinimo = i.estoque_maximo || (i.estoque_minimo ? i.estoque_minimo * 2 : 0);
+  const porcento = alvoMinimo ? Math.min((i.saldo / alvoMinimo) * 100, 100) : 0;
+
+  return h("button", { class: "linha " + n, onclick: () => abrirItem(i.id) },
+    h("div", { class: "linha-foto" },
+      i.foto_chave
+        ? h("img", { src: "/api/foto/" + encodeURIComponent(i.foto_chave), alt: "",
+                     loading: "lazy", style: "width:100%;height:100%;object-fit:cover" })
+        : icone(i.tipo === "ferramenta" ? "ferramenta" : "caixa", 20)),
+    h("div", { class: "linha-corpo" },
+      h("div", { class: "linha-nome uma-linha", texto: i.nome }),
+      h("div", { class: "linha-meta" }, comSeparador),
+      i.estoque_minimo > 0
+        ? h("div", { class: "medidor " + n, style: "margin-top:6px;max-width:180px" },
+            h("i", { style: `width:${Math.max(porcento, 2)}%` }))
+        : null),
+    h("div", { class: "linha-fim" },
+      h("div", { class: "linha-saldo " + n },
+        num(i.saldo), h("small", { texto: i.unidade })),
+      i.estoque_minimo > 0
+        ? h("div", { class: "mini sutil", texto: `mín ${num(i.estoque_minimo)}` })
+        : null));
+}
+
+function linhaFerramenta(f) {
+  const emUso = f.situacao === "em_uso";
+  const dias = f.dias_fora ?? (f.posse_desde
+    ? Math.floor((Date.now() - new Date(f.posse_desde + "Z")) / 864e5) : null);
+  const atrasada = emUso && dias >= 7;
+
+  return h("button", { class: "linha " + (atrasada ? "atencao" : ""),
+                       onclick: () => abrirFerramenta(f.id) },
+    h("div", { class: "linha-foto" }, icone("ferramenta", 20)),
+    h("div", { class: "linha-corpo" },
+      h("div", { class: "linha-nome uma-linha", texto: f.item || f.item_nome }),
+      h("div", { class: "linha-meta" },
+        h("span", { class: "mono", texto: f.patrimonio }),
+        h("span", { class: "sep", texto: "·" }),
+        h("span", { texto: emUso ? `com ${f.posse_pessoa}` : (f.deposito || "no depósito") }))),
+    h("div", { class: "linha-fim" },
+      h("span", { class: "selo " + (emUso ? (atrasada ? "atencao" : "") : "ok") },
+        h("span", { class: "ponto" }),
+        emUso ? "em uso" : f.situacao === "manutencao" ? "manutenção" : "disponível"),
+      emUso && dias !== null
+        ? h("div", { class: "mini sutil", texto: `há ${dias} ${dias === 1 ? "dia" : "dias"}` })
+        : null));
+}
+
+/* ---------- busca falando ----------
+   No galpão a mão está suja e às vezes de luva. Falar é o caminho mais
+   curto. Só aparece onde o navegador realmente suporta. */
+const reconhecimentoDeVoz = () =>
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function buscarFalando(campo) {
+  const Motor = reconhecimentoDeVoz();
+  if (!Motor) return recado("este navegador não escuta", "erro");
+  const r = new Motor();
+  r.lang = "pt-BR";
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  recado("pode falar…");
+  r.onresult = (ev) => {
+    campo.value = ev.results[0][0].transcript;
+    rodarBusca();
+  };
+  r.onerror = (ev) => recado(
+    ev.error === "not-allowed" ? "o microfone está bloqueado" : "não consegui ouvir", "erro");
+  r.start();
+}
+</script>
+<script>
+"use strict";
+
+/* ============================================================
+   ITEM — ficha, saldo por depósito e kardex
+   ============================================================ */
+
+function lembrarRecente(item) {
+  const lista = estado.recentes.filter((r) => r.id !== item.id);
+  lista.unshift({ id: item.id, nome: item.nome, codigo: item.codigo });
+  estado.recentes = lista.slice(0, 12);
+  localStorage.setItem("almox.recentes", JSON.stringify(estado.recentes));
+}
+
+async function abrirItem(id) {
+  const d = await api(`/itens/${id}`);
+  const i = d.item;
+  lembrarRecente(i);
+
+  const podeMover = ["admin", "engenheiro", "almoxarife"].includes(estado.eu.papel);
+  const podeEditar = ["admin", "engenheiro"].includes(estado.eu.papel);
+  const n = nivel(d.saldo, i.estoque_minimo);
+
+  const corpo = h("div", { class: "pilha" });
+
+  // Saldo grande, primeiro: é a pergunta que trouxe a pessoa até aqui.
+  corpo.appendChild(h("div", { class: "cartao", style: "text-align:center" },
+    h("div", { class: "indicador-valor " + n,
+               style: `font-size:2.6rem;color:var(--${n === "ok" ? "ok" : n === "atencao" ? "atencao" : n === "critico" ? "critico" : "conteudo"}-txt)` },
+      num(d.saldo), h("small", { style: "font-size:1rem;color:var(--sutil);margin-left:6px",
+                                 texto: i.unidade })),
+    h("div", { class: "peq sutil" },
+      i.estoque_minimo > 0 ? `mínimo ${num(i.estoque_minimo)} ${i.unidade}` : "sem mínimo definido"),
+    i.unidade_compra && i.fator_conversao > 1
+      ? h("div", { class: "mini sutil", style: "margin-top:4px",
+                   texto: `equivale a ${num(d.saldo / i.fator_conversao)} ${i.unidade_compra}` })
+      : null));
+
+  const fatos = [];
+  if (i.localizacao) fatos.push(["lugar", "Localização", i.localizacao]);
+  if (i.categoria) fatos.push(["caixas", "Categoria", i.categoria]);
+  if (i.fornecedor) fatos.push(["caminhao", "Fornecedor", i.fornecedor]);
+  if (i.ean) fatos.push(["etiqueta", "Cód. de barras", i.ean]);
+  if (i.unidade_compra) fatos.push(["caixa", "Compra em",
+    `${i.unidade_compra} (${num(i.fator_conversao)} ${i.unidade})`]);
+  if (estado.eu.ve_dinheiro && i.custo_ultimo) {
+    fatos.push(["grafico", "Último custo", `${dinheiro(i.custo_ultimo)} / ${i.unidade}`]);
+  }
+
+  if (fatos.length) {
+    corpo.appendChild(h("div", { class: "cartao apertado" },
+      h("div", { class: "pilha apertada" }, fatos.map(([ic, r, v]) =>
+        h("div", { class: "fila" },
+          icone(ic, 16), h("span", { class: "peq fraco cresce", texto: r }),
+          h("span", { class: "peq forte", texto: v }))))));
+  }
+
+  // Saldo por depósito só aparece quando há mais de um: numa obra só, essa
+  // linha seria ruído.
+  const comSaldo = d.saldos.filter((s) => s.quantidade !== 0);
+  if (d.saldos.length > 1) {
+    corpo.appendChild(h("div", { class: "cartao apertado" },
+      h("div", { class: "rotulo-secao", style: "margin-bottom:8px", texto: "Onde está" }),
+      h("div", { class: "pilha apertada" },
+        (comSaldo.length ? comSaldo : d.saldos).map((s) =>
+          h("div", { class: "fila" },
+            h("span", { class: "peq cresce uma-linha",
+                        texto: s.obra ? `${s.obra} · ${s.deposito}` : s.deposito }),
+            h("span", { class: "peq forte num", texto: `${num(s.quantidade)} ${i.unidade}` }))))));
+  }
+
+  if (d.lotes.length) {
+    corpo.appendChild(h("div", { class: "cartao apertado" },
+      h("div", { class: "rotulo-secao", style: "margin-bottom:8px", texto: "Lotes" }),
+      h("div", { class: "pilha apertada" }, d.lotes.map((l) => {
+        const dias = l.validade
+          ? Math.round((new Date(l.validade) - Date.now()) / 864e5) : null;
+        return h("div", { class: "fila" },
+          h("span", { class: "peq mono cresce", texto: l.codigo || `lote ${l.id}` }),
+          l.validade
+            ? h("span", { class: "selo " + (dias < 0 ? "critico" : dias < 30 ? "atencao" : ""),
+                          texto: dias < 0 ? "vencido" : `vence em ${dias}d` })
+            : null,
+          h("span", { class: "peq forte num", texto: num(l.quantidade) }));
+      }))));
+  }
+
+  if (d.ativos.length) {
+    corpo.appendChild(h("div", { class: "cartao apertado" },
+      h("div", { class: "rotulo-secao", style: "margin-bottom:8px",
+                 texto: `Unidades (${d.ativos.length})` }),
+      h("div", { class: "lista" }, d.ativos.map((a) => linhaFerramenta({ ...a, item: i.nome })))));
+  }
+
+  // Kardex: cada linha diz como o saldo FICOU. É o que o auditor procura.
+  if (d.kardex.length) {
+    corpo.appendChild(h("div", { class: "cartao apertado" },
+      h("div", { class: "cartao-cab", style: "margin-bottom:6px" },
+        h("h3", { texto: "Movimentação" }),
+        h("button", { class: "btn plano peq",
+                      onclick: () => { $("#folha").close(); irPara("movimentos", i.id) } },
+          "Ver tudo")),
+      h("div", { class: "kardex" }, d.kardex.slice(0, 12).map((m) => linhaKardex(m, i.unidade)))));
+  }
+
+  const acoes = [];
+  if (podeMover && i.tipo === "consumo") {
+    acoes.push(h("button", { class: "btn fantasma", onclick: () => {
+      solta(); fluxoMovimento("entrada", i);
+    }}, icone("entrada", 18), "Entrada"));
+    acoes.push(h("button", { class: "btn primario", onclick: () => {
+      solta(); fluxoMovimento("saida", i);
+    }}, icone("saida", 18), "Dar baixa"));
+  }
+
+  abrir({
+    titulo: i.nome,
+    corpo: h("div", {},
+      h("div", { class: "fila", style: "margin-bottom:12px" },
+        h("span", { class: "selo mono", texto: i.codigo }),
+        i.tipo === "ferramenta" ? h("span", { class: "selo", texto: "ferramenta" }) : null,
+        h("div", { class: "cresce" }),
+        h("button", { class: "btn-icone", title: "Imprimir etiqueta",
+                      onclick: () => imprimirEtiquetas([i.id]) }, icone("etiqueta", 18)),
+        podeEditar
+          ? h("button", { class: "btn-icone", title: "Editar",
+                          onclick: () => { solta(); formItem(i) } }, icone("cadastro", 18))
+          : null,
+        podeMover && i.tipo === "consumo"
+          ? h("button", { class: "btn-icone", title: "Ajustar saldo",
+                          onclick: () => { solta(); fluxoMovimento("ajuste", i) } },
+              icone("ajuste", 18))
+          : null),
+      corpo),
+    pe: acoes.length ? acoes : null,
+  });
+}
+
+function linhaKardex(m, unidade) {
+  const entra = m.quantidade > 0;
+  const classe = m.tipo === "ajuste" ? "ajuste" : entra ? "entrada" : "saida";
+  const detalhe = [m.pessoa, m.frente, m.deposito, m.documento].filter(Boolean).join(" · ");
+
+  return h("div", { class: "kardex-linha " + classe },
+    h("div", { class: "kardex-bola" },
+      icone(m.tipo === "ajuste" ? "ajuste" : entra ? "entrada" : "saida", 16)),
+    h("div", { class: "kardex-corpo" },
+      h("div", { class: "fila" },
+        h("span", { class: "kardex-qtd " + (entra ? "mais" : "menos") },
+          `${entra ? "+" : ""}${num(m.quantidade)} ${unidade || ""}`),
+        h("div", { class: "cresce" }),
+        h("span", { class: "kardex-quando", texto: quando(m.criado_em) })),
+      h("div", { class: "kardex-saldo" },
+        `${rotuloTipo(m.tipo)}${detalhe ? " · " + detalhe : ""}` +
+        (m.saldo_apos !== undefined ? ` · ficou ${num(m.saldo_apos)}` : "")),
+      m.motivo ? h("div", { class: "mini sutil", texto: m.motivo }) : null));
+}
+
+const rotuloTipo = (t) => ({
+  entrada: "Entrada", saida: "Saída", devolucao: "Devolução", ajuste: "Ajuste",
+  perda: "Perda", transf_saida: "Transferido", transf_entrada: "Recebido",
+}[t] || t);
+
+/* ============================================================
+   MOVIMENTO — o fluxo mais usado do sistema
+
+   Três toques: qual item · quanto · confirma. Cada passo a mais aqui é um
+   passo que o almoxarife vai pular anotando num caderno.
+   ============================================================ */
+
+async function fluxoMovimento(tipo, item) {
+  if (!item) {
+    const escolhido = await escolherItem(
+      tipo === "entrada" ? "Entrada de qual material?" : "Baixa de qual material?");
+    if (!escolhido) return;
+    item = escolhido;
+  }
+  if (item.tipo === "ferramenta") {
+    return recado("ferramenta se empresta e se devolve — abra a ficha dela", "erro");
+  }
+
+  const depositos = estado.cadastro.depositos;
+  const frentes = estado.cadastro.frentes;
+
+  const cxDeposito = h("select", {},
+    depositos.map((d) => h("option", { value: d.id, texto: nomeDeposito(d) })));
+  const cxFrente = h("select", {},
+    h("option", { value: "", texto: "— sem frente —" }),
+    frentes.map((f) => h("option", { value: f.id, texto: f.nome })));
+  const cxPessoa = h("input", { placeholder: "Quem está levando", autocomplete: "off" });
+  const cxDoc = h("input", { placeholder: "Nota fiscal / romaneio", autocomplete: "off" });
+  const cxCusto = h("input", { type: "number", step: "0.01", placeholder: "0,00" });
+  const cxMotivo = h("input", { placeholder: "Por que está ajustando" });
+  const cxObs = h("input", { placeholder: "Observação (opcional)" });
+  const cxValidade = h("input", { type: "date" });
+  const cxLote = h("input", { placeholder: "Código do lote" });
+
+  // Unidade de compra x de uso: quem recebe 10 sacos digita 10, não 500.
+  // O sistema converte — misturar as duas é como o estoque desanda.
+  let emUnidadeCompra = false;
+  const temConversao = item.unidade_compra && item.fator_conversao > 1;
+  const cxUnidade = temConversao ? h("div", { class: "segmentado" },
+    h("button", { type: "button", "aria-pressed": "false", onclick: (ev) => {
+      emUnidadeCompra = false; alternar(ev, false); atualizarVisor();
+    }, texto: item.unidade }),
+    h("button", { type: "button", "aria-pressed": "false", onclick: (ev) => {
+      emUnidadeCompra = true; alternar(ev, true); atualizarVisor();
+    }, texto: item.unidade_compra })) : null;
+
+  function alternar(ev, compra) {
+    for (const b of cxUnidade.children) b.setAttribute("aria-pressed", "false");
+    ev.currentTarget.setAttribute("aria-pressed", "true");
+  }
+  if (cxUnidade) cxUnidade.children[0].setAttribute("aria-pressed", "true");
+
+  let quantidade = null;
+  const btQuantidade = h("button", { class: "btn grande largo", type: "button",
+    style: "justify-content:space-between", onclick: async () => {
+      const u = emUnidadeCompra ? item.unidade_compra : item.unidade;
+      const n = await pedirNumero(`Quanto ${tipo === "entrada" ? "entrou" : "saiu"}?`, u,
+        quantidade || "", temConversao && emUnidadeCompra
+          ? `1 ${item.unidade_compra} = ${num(item.fator_conversao)} ${item.unidade}` : "");
+      if (n !== null) { quantidade = n; atualizarVisor() }
+    }});
+
+  function atualizarVisor() {
+    const u = emUnidadeCompra ? item.unidade_compra : item.unidade;
+    limpar(btQuantidade).append(
+      h("span", { class: "fraco", texto: "Quantidade" }),
+      h("span", { class: "forte num",
+                  texto: quantidade ? `${num(quantidade)} ${u}` : "toque para digitar" }));
+  }
+  atualizarVisor();
+
+  const campos = h("div", { class: "pilha" },
+    h("div", { class: "cartao apertado fila" },
+      h("div", { class: "linha-foto" }, icone("caixa", 20)),
+      h("div", { class: "cresce" },
+        h("div", { class: "forte uma-linha", texto: item.nome }),
+        h("div", { class: "mini sutil mono", texto: item.codigo }))),
+    cxUnidade ? h("div", { class: "campo" },
+      h("label", { texto: "Informar em" }), cxUnidade) : null,
+    btQuantidade,
+    h("div", { class: "campo" }, h("label", { texto: "Depósito" }), cxDeposito));
+
+  if (tipo === "saida") {
+    campos.append(
+      h("div", { class: "campo" }, h("label", { texto: "Frente de serviço (centro de custo)" }), cxFrente),
+      h("div", { class: "campo" }, h("label", { texto: "Quem está levando" }), cxPessoa));
+  }
+  if (tipo === "entrada") {
+    campos.append(
+      h("div", { class: "campo" }, h("label", { texto: "Documento" }), cxDoc),
+      estado.eu.ve_dinheiro
+        ? h("div", { class: "campo" },
+            h("label", { texto: `Custo por ${item.unidade}` }), cxCusto)
+        : null);
+    if (item.controla_lote) {
+      campos.append(
+        h("div", { class: "campo" }, h("label", { texto: "Lote" }), cxLote),
+        h("div", { class: "campo" }, h("label", { texto: "Validade" }), cxValidade));
+    }
+  }
+  if (tipo === "ajuste") {
+    campos.append(h("div", { class: "aviso" }, icone("alerta", 16),
+      h("span", { texto: "Ajuste não apaga nada: entra no histórico como correção, com seu nome." })),
+      h("div", { class: "campo" }, h("label", { texto: "Motivo (obrigatório)" }), cxMotivo));
+  }
+  campos.appendChild(h("div", { class: "campo" }, h("label", { texto: "Observação" }), cxObs));
+
+  const titulos = { entrada: "Registrar entrada", saida: "Dar baixa", ajuste: "Ajustar saldo" };
+
+  abrir({
+    titulo: titulos[tipo],
+    corpo: campos,
+    pe: [
+      h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta() }),
+      h("button", { class: "btn primario", texto: "Confirmar", onclick: async (ev) => {
+        if (!quantidade) return recado("informe a quantidade", "erro");
+        if (tipo === "ajuste" && !cxMotivo.value.trim()) {
+          return recado("o ajuste precisa de motivo", "erro");
+        }
+        ev.currentTarget.disabled = true;
+        try {
+          // No ajuste, o número digitado é a DIFERENÇA, e o sinal é escolhido
+          // logo antes de gravar — quantidade sempre positiva no teclado.
+          let q = quantidade;
+          if (tipo === "ajuste") {
+            const dir = await escolher("O saldo vai…", [
+              { valor: 1,  rotulo: `Aumentar ${num(q)} ${item.unidade}`, icone: "entrada" },
+              { valor: -1, rotulo: `Diminuir ${num(q)} ${item.unidade}`, icone: "saida" },
+            ]);
+            if (!dir) { ev.currentTarget.disabled = false; return }
+            q = q * dir;
+          }
+
+          const r = await api("/movimentos", { corpo: {
+            item_id: item.id, deposito_id: Number(cxDeposito.value), tipo, quantidade: q,
+            em_unidade_compra: emUnidadeCompra,
+            frente_id: cxFrente.value ? Number(cxFrente.value) : null,
+            pessoa: cxPessoa.value.trim() || null,
+            documento: cxDoc.value.trim() || null,
+            custo_unitario: cxCusto.value ? Number(cxCusto.value) : null,
+            motivo: cxMotivo.value.trim() || null,
+            obs: cxObs.value.trim() || null,
+            lote: cxLote.value.trim() || null,
+            validade: cxValidade.value || null,
+          }});
+          solta();
+          recado(`${titulos[tipo]} · saldo agora: ${num(r.saldo)} ${r.unidade}`, "ok");
+          if (estado.tela === "inicio" || estado.tela === "busca") irPara(estado.tela);
+        } catch (e) {
+          ev.currentTarget.disabled = false;
+          recado(e.message, "erro");
+        }
+      }}),
+    ],
+  });
+}
+
+const nomeDeposito = (d) => {
+  const obra = estado.cadastro.obras.find((o) => o.id === d.obra_id);
+  return obra ? `${obra.nome} · ${d.nome}` : d.nome;
+};
+
+/* Escolher item: busca ao vivo dentro da folha, com atalho para escanear.
+   Devolve o item, ou null se a pessoa desistiu. */
+function escolherItem(titulo, apenas = null) {
+  return new Promise((ok) => {
+    const lista = h("div", { class: "lista" });
+    const campo = h("input", {
+      type: "search", placeholder: "Nome, código ou prateleira…",
+      autocomplete: "off", autocapitalize: "none",
+      oninput: () => { clearTimeout(t); t = setTimeout(procurar, 200) },
+    });
+    let t = null;
+
+    async function procurar() {
+      const q = campo.value.trim();
+      const p = new URLSearchParams({ limite: "20" });
+      if (q) p.set("q", q);
+      if (apenas) p.set("filtros", apenas);
+      const r = await api("/busca?" + p);
+      limpar(lista);
+      if (!r.itens.length) {
+        lista.appendChild(vazio("busca", "Nada encontrado", "Tente o código da etiqueta."));
+        return;
+      }
+      for (const i of r.itens) {
+        lista.appendChild(h("button", { class: "linha", onclick: () => solta(i) },
+          h("div", { class: "linha-foto" }, icone("caixa", 20)),
+          h("div", { class: "linha-corpo" },
+            h("div", { class: "linha-nome uma-linha", texto: i.nome }),
+            h("div", { class: "linha-meta" },
+              h("span", { class: "mono", texto: i.codigo }),
+              i.localizacao ? h("span", { class: "sep", texto: "·" }) : null,
+              i.localizacao ? h("span", { texto: i.localizacao }) : null)),
+          h("div", { class: "linha-fim" },
+            h("div", { class: "linha-saldo " + nivel(i.saldo, i.estoque_minimo) },
+              num(i.saldo), h("small", { texto: i.unidade })))));
+      }
+    }
+
+    abrir({
+      titulo,
+      corpo: h("div", { class: "pilha" },
+        h("div", { class: "busca-caixa" },
+          icone("busca", 20), campo,
+          h("button", { class: "btn-icone", "aria-label": "Escanear", onclick: async () => {
+            const achado = await escanear(true);
+            if (achado?.tipo === "item") {
+              const d = await api(`/itens/${achado.id}`);
+              solta(d.item);
+            }
+          }}, icone("escanear", 20))),
+        lista),
+      aoResponder: ok,
+    });
+    procurar();
+    if (window.matchMedia("(min-width: 861px)").matches) setTimeout(() => campo.focus(), 60);
+  });
+}
+
+/* ============================================================
+   ESCANEAR
+
+   Duas portas, porque nem todo navegador abre a mesma:
+     · Android/Chrome tem BarcodeDetector nativo — lê QR e o código de
+       barras do fabricante direto da câmera, sem biblioteca nenhuma.
+     · iPhone não tem. Mas o QR da etiqueta guarda uma URL, então a câmera
+       DO PRÓPRIO iOS lê a etiqueta e abre o sistema no item certo — que é
+       até melhor que ler de dentro do app.
+   E, nos dois casos, dá para digitar o código impresso na etiqueta. Câmera
+   que não colabora nunca pode ser o fim do caminho.
+   ============================================================ */
+
+async function escanear(devolver = false) {
+  const temDetector = "BarcodeDetector" in window;
+  const corpo = h("div", { class: "pilha" });
+  const cxCodigo = h("input", {
+    placeholder: "Código da etiqueta", autocomplete: "off", autocapitalize: "characters",
+    onkeydown: (ev) => { if (ev.key === "Enter") { ev.preventDefault(); confirmar() } },
+  });
+
+  let parar = null;
+  const resultado = { valor: null };
+
+  function confirmar() {
+    const c = cxCodigo.value.trim();
+    if (!c) return recado("digite o código", "erro");
+    resultado.valor = c;
+    if (parar) parar();
+    solta(c);
+  }
+
+  if (temDetector) {
+    const video = h("video", { playsinline: true, muted: true });
+    corpo.appendChild(h("div", { class: "camera-caixa" }, video, h("div", { class: "camera-mira" })));
+
+    (async () => {
+      try {
+        const fluxo = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        video.srcObject = fluxo;
+        await video.play();
+        const detector = new BarcodeDetector({
+          formats: ["qr_code", "ean_13", "ean_8", "code_128", "code_39"],
+        });
+        let vivo = true;
+        parar = () => { vivo = false; fluxo.getTracks().forEach((t) => t.stop()) };
+
+        const laco = async () => {
+          if (!vivo) return;
+          try {
+            const achados = await detector.detect(video);
+            if (achados.length) {
+              const codigo = achados[0].rawValue;
+              if (navigator.vibrate) navigator.vibrate(60);
+              parar();
+              solta(codigo);
+              return;
+            }
+          } catch {}
+          requestAnimationFrame(laco);
+        };
+        requestAnimationFrame(laco);
+      } catch (e) {
+        limpar(corpo).appendChild(h("div", { class: "aviso" }, icone("alerta", 16),
+          h("span", { texto: "Não consegui abrir a câmera. Digite o código da etiqueta." })));
+        corpo.appendChild(h("div", { class: "campo" },
+          h("label", { texto: "Código" }), cxCodigo));
+      }
+    })();
+  } else {
+    corpo.appendChild(h("div", { class: "aviso info" }, icone("ajuda", 18),
+      h("span", { texto: "Este navegador não lê QR de dentro do app — mas a câmera do próprio celular lê a etiqueta e abre o sistema no item. Ou digite o código impresso." })));
+  }
+
+  corpo.appendChild(h("div", { class: "campo" },
+    h("label", { texto: temDetector ? "Ou digite o código" : "Código da etiqueta" }), cxCodigo));
+
+  const codigo = await new Promise((ok) => abrir({
+    titulo: "Escanear etiqueta",
+    corpo,
+    aoResponder: (v) => { if (parar) parar(); ok(v) },
+    pe: [
+      h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta(null) }),
+      h("button", { class: "btn primario", texto: "Buscar", onclick: confirmar }),
+    ],
+  }));
+
+  if (!codigo) return null;
+  return await resolverCodigo(codigo, devolver);
+}
+
+async function resolverCodigo(codigo, devolver = false) {
+  try {
+    const r = await api("/resolver?codigo=" + encodeURIComponent(codigo));
+    if (devolver) return r;
+    if (r.tipo === "item") await abrirItem(r.id);
+    else if (r.tipo === "ferramenta") await abrirFerramenta(r.id);
+    return r;
+  } catch (e) {
+    if (e.status === 404) {
+      recado(`nada cadastrado com o código "${codigo}"`, "erro");
+      if (["admin", "engenheiro"].includes(estado.eu.papel)) {
+        const criar = await perguntar("Código desconhecido",
+          `Não existe item com o código "${codigo}". Quer cadastrar agora?`, "Cadastrar");
+        if (criar) formItem(null, "", codigo);
+      }
+    } else recado(e.message, "erro");
+    return null;
+  }
+}
+</script>
+<script>
+"use strict";
+
+/* ============================================================
+   REQUISIÇÃO — o encarregado pede, o almoxarife entrega
+   ============================================================ */
+
+async function telaRequisicoes() {
+  const d = await api("/requisicoes");
+  const alvo = limpar($("#conteudo"));
+  const podeAtender = ["admin", "engenheiro", "almoxarife"].includes(estado.eu.papel);
+
+  alvo.appendChild(h("div", { class: "acoes", style: "margin-bottom:14px" },
+    h("button", { class: "btn primario toque", onclick: () => novaRequisicao() },
+      icone("mais", 20), "Nova requisição")));
+
+  if (!d.requisicoes.length) {
+    alvo.appendChild(vazio("lista", "Nenhuma requisição",
+      podeAtender ? "Quando alguém pedir material, aparece aqui."
+                  : "Peça material e acompanhe o atendimento por aqui."));
+    return;
+  }
+
+  const abertas = d.requisicoes.filter((r) => ["aberta", "separando"].includes(r.situacao));
+  const fechadas = d.requisicoes.filter((r) => !["aberta", "separando"].includes(r.situacao));
+
+  if (abertas.length) {
+    alvo.append(
+      h("div", { class: "busca-grupo-titulo", texto: `Na fila · ${abertas.length}` }),
+      h("div", { class: "lista", style: "margin-bottom:20px" },
+        abertas.map((r) => linhaRequisicao(r))));
+  }
+  if (fechadas.length) {
+    alvo.append(
+      h("div", { class: "busca-grupo-titulo", texto: "Fechadas" }),
+      h("div", { class: "lista" }, fechadas.slice(0, 25).map((r) => linhaRequisicao(r))));
+  }
+}
+
+const SELO_REQ = {
+  aberta:    { classe: "atencao", rotulo: "aberta" },
+  separando: { classe: "acento",  rotulo: "separando" },
+  entregue:  { classe: "ok",      rotulo: "entregue" },
+  parcial:   { classe: "atencao", rotulo: "parcial" },
+  cancelada: { classe: "",        rotulo: "cancelada" },
+};
+
+function linhaRequisicao(r) {
+  const s = SELO_REQ[r.situacao] || SELO_REQ.aberta;
+  return h("button", {
+    class: "linha " + (r.urgencia === "urgente" && r.situacao === "aberta" ? "critico" : ""),
+    onclick: () => abrirRequisicao(r.id),
+  },
+    h("div", { class: "linha-foto" }, icone("lista", 20)),
+    h("div", { class: "linha-corpo" },
+      h("div", { class: "linha-nome" },
+        `#${r.numero} · ${r.frente || r.obra}`,
+        r.urgencia === "urgente"
+          ? h("span", { class: "selo critico", style: "margin-left:8px", texto: "urgente" })
+          : null),
+      h("div", { class: "linha-meta" },
+        h("span", { texto: r.solicitante }),
+        h("span", { class: "sep", texto: "·" }),
+        h("span", { texto: plural(r.itens, "item", "itens") }),
+        h("span", { class: "sep", texto: "·" }),
+        h("span", { texto: quando(r.criado_em) }))),
+    h("div", { class: "linha-fim" }, h("span", { class: "selo " + s.classe, texto: s.rotulo })));
+}
+
+async function novaRequisicao() {
+  const c = estado.cadastro;
+  if (!c.obras.length) return recado("cadastre uma obra antes", "erro");
+
+  const itens = [];
+  const listaItens = h("div", { class: "pilha apertada" });
+
+  const cxObra = h("select", {}, c.obras.map((o) => h("option", { value: o.id, texto: o.nome })));
+  const cxFrente = h("select", {});
+  const cxDeposito = h("select", {},
+    c.depositos.map((d) => h("option", { value: d.id, texto: nomeDeposito(d) })));
+  const cxObs = h("input", { placeholder: "Para quando, onde entregar…" });
+  let urgente = false;
+
+  function atualizarFrentes() {
+    const obra = Number(cxObra.value);
+    limpar(cxFrente).append(
+      h("option", { value: "", texto: "— sem frente —" }),
+      ...c.frentes.filter((f) => f.obra_id === obra)
+        .map((f) => h("option", { value: f.id, texto: f.nome })));
+  }
+  cxObra.addEventListener("change", atualizarFrentes);
+  atualizarFrentes();
+  if (estado.eu.obra_id) cxObra.value = estado.eu.obra_id;
+
+  function pintarItens() {
+    limpar(listaItens);
+    if (!itens.length) {
+      listaItens.appendChild(h("p", { class: "sutil peq centro",
+        texto: "Nenhum item ainda — toque em “Adicionar item”." }));
+      return;
+    }
+    itens.forEach((it, k) => {
+      listaItens.appendChild(h("div", { class: "linha" },
+        h("div", { class: "linha-corpo" },
+          h("div", { class: "linha-nome uma-linha", texto: it.nome }),
+          h("div", { class: "linha-meta" }, h("span", { class: "mono", texto: it.codigo }))),
+        h("span", { class: "forte num", texto: `${num(it.qtd_pedida)} ${it.unidade}` }),
+        h("button", { class: "btn-icone", "aria-label": "Remover",
+                      onclick: () => { itens.splice(k, 1); pintarItens() } }, icone("lixo", 18))));
+    });
+  }
+  pintarItens();
+
+  abrir({
+    titulo: "Nova requisição",
+    corpo: h("div", { class: "pilha" },
+      h("div", { class: "grade c2 firme" },
+        h("div", { class: "campo" }, h("label", { texto: "Obra" }), cxObra),
+        h("div", { class: "campo" }, h("label", { texto: "Frente" }), cxFrente)),
+      h("div", { class: "campo" }, h("label", { texto: "Retirar em" }), cxDeposito),
+      h("div", { class: "campo" }, h("label", { texto: "Observação" }), cxObs),
+      h("button", { class: "chip", type: "button", "aria-pressed": "false",
+        onclick: (ev) => {
+          urgente = !urgente;
+          ev.currentTarget.setAttribute("aria-pressed", String(urgente));
+        }}, icone("alerta", 14), "Urgente"),
+      h("hr", { class: "separador" }),
+      h("div", { class: "rotulo-secao", texto: "Itens" }),
+      listaItens,
+      h("button", { class: "btn largo", type: "button", onclick: async () => {
+        const item = await escolherItem("Qual material?", "consumo");
+        if (!item) return;
+        const q = await pedirNumero(`Quanto de ${item.nome}?`, item.unidade);
+        if (!q) return;
+        itens.push({ item_id: item.id, nome: item.nome, codigo: item.codigo,
+                     unidade: item.unidade, qtd_pedida: q });
+        pintarItens();
+      }}, icone("mais", 18), "Adicionar item")),
+    pe: [
+      h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta() }),
+      h("button", { class: "btn primario", texto: "Enviar pedido", onclick: async (ev) => {
+        if (!itens.length) return recado("adicione pelo menos um item", "erro");
+        ev.currentTarget.disabled = true;
+        try {
+          const r = await api("/requisicoes", { corpo: {
+            obra_id: Number(cxObra.value),
+            frente_id: cxFrente.value ? Number(cxFrente.value) : null,
+            deposito_id: Number(cxDeposito.value),
+            urgencia: urgente ? "urgente" : "normal",
+            observacao: cxObs.value.trim() || null,
+            itens: itens.map((i) => ({ item_id: i.item_id, qtd_pedida: i.qtd_pedida })),
+          }});
+          solta();
+          recado(`Requisição #${r.numero} enviada`, "ok");
+          irPara("requisicoes");
+        } catch (e) { ev.currentTarget.disabled = false; recado(e.message, "erro") }
+      }}),
+    ],
+  });
+}
+
+async function abrirRequisicao(id) {
+  const d = await api(`/requisicoes/${id}`);
+  const r = d.requisicao;
+  const podeAtender = ["admin", "engenheiro", "almoxarife"].includes(estado.eu.papel);
+  const emAberto = ["aberta", "separando"].includes(r.situacao);
+  const s = SELO_REQ[r.situacao] || SELO_REQ.aberta;
+
+  // Quantidade a entregar por item, começando pelo que foi pedido — mas
+  // limitada ao que existe, senão o almoxarife confirma uma entrega que o
+  // servidor vai recusar item por item.
+  const entregas = new Map();
+  for (const i of d.itens) {
+    entregas.set(i.item_id, Math.min(i.qtd_pedida - i.qtd_atendida, Math.max(i.saldo, 0)));
+  }
+
+  const lista = h("div", { class: "pilha apertada" });
+  function pintar() {
+    limpar(lista);
+    for (const i of d.itens) {
+      const querido = i.qtd_pedida - i.qtd_atendida;
+      const falta = i.saldo < querido;
+      const vai = entregas.get(i.item_id);
+      lista.appendChild(h("div", { class: "linha " + (falta ? "atencao" : "") },
+        h("div", { class: "linha-corpo" },
+          h("div", { class: "linha-nome uma-linha", texto: i.nome }),
+          h("div", { class: "linha-meta" },
+            h("span", { class: "mono", texto: i.codigo }),
+            i.localizacao ? h("span", { class: "sep", texto: "·" }) : null,
+            i.localizacao ? h("span", { texto: i.localizacao }) : null,
+            h("span", { class: "sep", texto: "·" }),
+            h("span", { class: falta ? "" : "", texto: `tem ${num(i.saldo)}` }))),
+        h("div", { class: "linha-fim" },
+          h("div", { class: "linha-saldo", texto: `${num(i.qtd_pedida)} ${i.unidade}` }),
+          emAberto && podeAtender
+            ? h("button", { class: "btn peq", style: "min-height:32px;padding:0 10px",
+                onclick: async () => {
+                  const n = await pedirNumero(`Entregar quanto de ${i.nome}?`, i.unidade, vai,
+                    `pedido ${num(querido)} · em estoque ${num(i.saldo)}`);
+                  if (n !== null) { entregas.set(i.item_id, n); pintar() }
+                }}, `entregar ${num(vai)}`)
+            : i.qtd_atendida > 0
+              ? h("span", { class: "selo ok", texto: `entregue ${num(i.qtd_atendida)}` })
+              : null)));
+    }
+  }
+  pintar();
+
+  const acoes = [];
+  if (emAberto && podeAtender) {
+    if (r.situacao === "aberta") {
+      acoes.push(h("button", { class: "btn fantasma", texto: "Separar", onclick: async () => {
+        await api(`/requisicoes/${id}/separar`, { metodo: "POST" });
+        solta(); recado("marcada como em separação", "ok"); irPara("requisicoes");
+      }}));
+    }
+    acoes.push(h("button", { class: "btn primario", texto: "Entregar",
+      onclick: () => confirmarEntrega(id, d, entregas) }));
+  } else if (emAberto) {
+    acoes.push(h("button", { class: "btn fantasma", texto: "Cancelar pedido",
+      onclick: async () => {
+        const motivo = await pedirTexto("Cancelar pedido", "Por quê?");
+        if (motivo === null) return;
+        await api(`/requisicoes/${id}/cancelar`, { corpo: { motivo } });
+        solta(); irPara("requisicoes");
+      }}));
+  }
+
+  abrir({
+    titulo: `Requisição #${r.numero}`,
+    corpo: h("div", { class: "pilha" },
+      h("div", { class: "fila" },
+        h("span", { class: "selo " + s.classe, texto: s.rotulo }),
+        r.urgencia === "urgente" ? h("span", { class: "selo critico", texto: "urgente" }) : null),
+      h("div", { class: "cartao apertado pilha apertada" },
+        linhaFato("gente", "Pediu", r.solicitante),
+        linhaFato("lugar", "Obra", r.obra + (r.frente ? ` · ${r.frente}` : "")),
+        linhaFato("caixas", "Retirar em", r.deposito),
+        linhaFato("relogio", "Aberta", dataHora(r.criado_em)),
+        r.recebido_por ? linhaFato("certo", "Recebido por", r.recebido_por) : null,
+        r.entregue_em ? linhaFato("calendario", "Entregue", dataHora(r.entregue_em)) : null),
+      r.observacao ? h("div", { class: "aviso info" }, icone("papel", 16),
+        h("span", { texto: r.observacao })) : null,
+      h("div", { class: "rotulo-secao", texto: "Itens" }),
+      lista),
+    pe: acoes.length ? acoes : null,
+  });
+}
+
+const linhaFato = (ic, rotulo, valor) => h("div", { class: "fila" },
+  icone(ic, 16), h("span", { class: "peq fraco cresce", texto: rotulo }),
+  h("span", { class: "peq forte", texto: valor }));
+
+/* A entrega só fecha com o PIN de quem recebeu. Sem prova de entrega,
+   "eu nunca peguei esse material" não tem resposta — e essa discussão
+   acontece em toda obra. */
+function confirmarEntrega(id, d, entregas) {
+  const linhas = [...entregas.entries()].filter(([, q]) => q > 0);
+  if (!linhas.length) return recado("nenhuma quantidade para entregar", "erro");
+
+  let pin = "";
+  const visor = h("div", { class: "visor", texto: "····" });
+  const pintar = () => { visor.textContent = (pin + "····").slice(0, 4).replace(/\d/g, "●") };
+
+  abrir({
+    titulo: "Confirmar entrega",
+    corpo: h("div", { class: "pilha" },
+      h("div", { class: "aviso info" }, icone("gente", 18),
+        h("span", { texto: "Quem está recebendo digita o PIN. É a assinatura da entrega." })),
+      visor,
+      h("div", { class: "teclado" },
+        ["1","2","3","4","5","6","7","8","9","","0","apagar"].map((t) =>
+          t === "" ? h("div") : h("button", { type: "button", onclick: () => {
+            if (t === "apagar") pin = pin.slice(0, -1);
+            else if (pin.length < 4) pin += t;
+            pintar();
+          }}, t === "apagar" ? icone("esquerda", 22) : t)))),
+    pe: [
+      h("button", { class: "btn fantasma", texto: "Voltar", onclick: () => solta() }),
+      h("button", { class: "btn primario", texto: "Confirmar", onclick: async (ev) => {
+        if (pin.length !== 4) return recado("o PIN tem 4 dígitos", "erro");
+        ev.currentTarget.disabled = true;
+        try {
+          const r = await api(`/requisicoes/${id}/entregar`, { corpo: {
+            pin, itens: linhas.map(([item_id, qtd_atendida]) => ({ item_id, qtd_atendida })),
+          }});
+          solta();
+          recado(r.aviso || `Entregue a ${r.recebido_por}`, r.aviso ? "" : "ok");
+          irPara("requisicoes");
+        } catch (e) { ev.currentTarget.disabled = false; recado(e.message, "erro") }
+      }}),
+    ],
+  });
+  pintar();
+}
+
+/* ============================================================
+   FERRAMENTA — quem está com ela, desde quando
+   ============================================================ */
+
+async function telaFerramentas() {
+  const d = await api("/ferramentas");
+  const alvo = limpar($("#conteudo"));
+  const podeMover = ["admin", "engenheiro", "almoxarife"].includes(estado.eu.papel);
+
+  const emUso = d.ferramentas.filter((f) => f.situacao === "em_uso");
+  const atrasadas = emUso.filter((f) => f.dias_fora >= 7);
+  const livres = d.ferramentas.filter((f) => f.situacao === "disponivel");
+  const manutencao = d.ferramentas.filter((f) => f.situacao === "manutencao");
+
+  alvo.appendChild(h("div", { class: "grade c3", style: "margin-bottom:16px" },
+    h("div", { class: "indicador" },
+      h("div", { class: "indicador-rotulo" }, icone("ferramenta", 14), h("span", { texto: "Na rua" })),
+      h("div", { class: "indicador-valor", texto: num(emUso.length) })),
+    h("div", { class: "indicador " + (atrasadas.length ? "atencao" : "") },
+      h("div", { class: "indicador-rotulo" }, icone("relogio", 14), h("span", { texto: "Fora +7 dias" })),
+      h("div", { class: "indicador-valor", texto: num(atrasadas.length) })),
+    h("div", { class: "indicador ok" },
+      h("div", { class: "indicador-rotulo" }, icone("certo", 14), h("span", { texto: "Disponíveis" })),
+      h("div", { class: "indicador-valor", texto: num(livres.length) }))));
+
+  if (!d.ferramentas.length) {
+    alvo.appendChild(vazio("ferramenta", "Nenhuma ferramenta cadastrada",
+      "Cada furadeira, andaime ou betoneira vira uma unidade com etiqueta própria."));
+    return;
+  }
+
+  const secao = (titulo, lista) => lista.length
+    ? h("div", { style: "margin-bottom:20px" },
+        h("div", { class: "busca-grupo-titulo", texto: `${titulo} · ${lista.length}` }),
+        h("div", { class: "lista" }, lista.map((f) => linhaFerramenta(f))))
+    : null;
+
+  alvo.append(
+    secao("Atrasadas", atrasadas),
+    secao("Em uso", emUso.filter((f) => f.dias_fora < 7)),
+    secao("Em manutenção", manutencao),
+    secao("No depósito", livres));
+}
+
+async function abrirFerramenta(id) {
+  const d = await api(`/ferramentas/${id}`);
+  const f = d.ferramenta;
+  const podeMover = ["admin", "engenheiro", "almoxarife"].includes(estado.eu.papel);
+  const emUso = f.situacao === "em_uso";
+  const dias = f.posse_desde
+    ? Math.floor((Date.now() - new Date(f.posse_desde + "Z")) / 864e5) : null;
+
+  const acoes = [];
+  if (podeMover) {
+    if (emUso) {
+      acoes.push(h("button", { class: "btn fantasma", texto: "Mandar p/ manutenção",
+        onclick: () => devolverFerramenta(id, true) }));
+      acoes.push(h("button", { class: "btn primario", texto: "Registrar devolução",
+        onclick: () => devolverFerramenta(id, false) }));
+    } else if (f.situacao === "manutencao") {
+      acoes.push(h("button", { class: "btn primario", texto: "Voltou da manutenção",
+        onclick: () => devolverFerramenta(id, false) }));
+    } else {
+      acoes.push(h("button", { class: "btn primario", texto: "Emprestar",
+        onclick: () => emprestarFerramenta(id, f) }));
+    }
+  }
+
+  abrir({
+    titulo: f.item,
+    corpo: h("div", { class: "pilha" },
+      h("div", { class: "fila" },
+        h("span", { class: "selo mono", texto: f.patrimonio }),
+        h("span", { class: "selo " + (emUso ? "atencao" : f.situacao === "manutencao" ? "" : "ok") },
+          h("span", { class: "ponto" }),
+          emUso ? "em uso" : f.situacao === "manutencao" ? "manutenção" : "disponível"),
+        h("div", { class: "cresce" }),
+        h("button", { class: "btn-icone", title: "Imprimir etiqueta",
+          onclick: () => imprimirEtiquetas([], [id]) }, icone("etiqueta", 18))),
+
+      emUso
+        ? h("div", { class: "cartao", style: "text-align:center" },
+            icone("gente", 26), h("div", { style: "height:6px" }),
+            h("div", { class: "forte", style: "font-size:1.2rem", texto: f.posse_pessoa }),
+            h("div", { class: "peq sutil",
+              texto: `há ${dias} ${dias === 1 ? "dia" : "dias"}${f.frente ? " · " + f.frente : ""}` }),
+            f.prev_devolucao
+              ? h("div", { class: "mini sutil", texto: "previsto para " + f.prev_devolucao })
+              : null)
+        : null,
+
+      h("div", { class: "cartao apertado pilha apertada" },
+        f.serie ? linhaFato("papel", "Série", f.serie) : null,
+        linhaFato("caixas", "Depósito", f.deposito || "—"),
+        f.obs ? linhaFato("papel", "Observação", f.obs) : null),
+
+      d.historico.length
+        ? h("div", { class: "cartao apertado" },
+            h("div", { class: "rotulo-secao", style: "margin-bottom:8px", texto: "Histórico" }),
+            h("div", { class: "kardex" }, d.historico.map((m) =>
+              h("div", { class: "kardex-linha " + (m.tipo === "emprestimo" ? "saida" : "entrada") },
+                h("div", { class: "kardex-bola" },
+                  icone(m.tipo === "emprestimo" ? "saida" : "entrada", 16)),
+                h("div", { class: "kardex-corpo" },
+                  h("div", { class: "fila" },
+                    h("span", { class: "kardex-qtd",
+                      texto: m.tipo === "emprestimo" ? `saiu com ${m.pessoa}` : rotuloTipo(m.tipo) }),
+                    h("div", { class: "cresce" }),
+                    h("span", { class: "kardex-quando", texto: quando(m.criado_em) })),
+                  h("div", { class: "kardex-saldo",
+                    texto: `registrado por ${m.registrou}${m.frente ? " · " + m.frente : ""}` }))))))
+        : null),
+    pe: acoes.length ? acoes : null,
+  });
+}
+
+function emprestarFerramenta(id, f) {
+  const cxPessoa = h("input", { placeholder: "Nome de quem vai levar", autocomplete: "off" });
+  const cxFrente = h("select", {},
+    h("option", { value: "", texto: "— sem frente —" }),
+    estado.cadastro.frentes.map((x) => h("option", { value: x.id, texto: x.nome })));
+  const cxPrev = h("input", { type: "date" });
+
+  abrir({
+    titulo: "Emprestar " + f.item,
+    corpo: h("div", { class: "pilha" },
+      h("div", { class: "campo" }, h("label", { texto: "Quem está levando" }), cxPessoa),
+      h("div", { class: "campo" }, h("label", { texto: "Frente de serviço" }), cxFrente),
+      h("div", { class: "campo" },
+        h("label", { texto: "Previsão de devolução" }), cxPrev,
+        h("span", { class: "dica", texto: "Opcional — serve para o alerta de atraso." }))),
+    pe: [
+      h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta() }),
+      h("button", { class: "btn primario", texto: "Confirmar", onclick: async (ev) => {
+        if (!cxPessoa.value.trim()) return recado("informe quem está levando", "erro");
+        ev.currentTarget.disabled = true;
+        try {
+          await api(`/ferramentas/${id}/emprestar`, { corpo: {
+            pessoa: cxPessoa.value.trim(),
+            frente_id: cxFrente.value ? Number(cxFrente.value) : null,
+            prev_devolucao: cxPrev.value || null,
+          }});
+          solta(); recado("empréstimo registrado", "ok"); irPara("ferramentas");
+        } catch (e) { ev.currentTarget.disabled = false; recado(e.message, "erro") }
+      }}),
+    ],
+  });
+}
+
+async function devolverFerramenta(id, manutencao) {
+  const obs = manutencao ? await pedirTexto("Mandar para manutenção", "O que houve?") : null;
+  if (manutencao && obs === null) return;
+  try {
+    await api(`/ferramentas/${id}/devolver`, { corpo: { manutencao, obs } });
+    solta();
+    recado(manutencao ? "enviada para manutenção" : "devolvida", "ok");
+    irPara("ferramentas");
+  } catch (e) { recado(e.message, "erro") }
+}
+
+/* ============================================================
+   MOVIMENTOS — o kardex geral, com filtros
+   ============================================================ */
+
+async function telaMovimentos(itemId) {
+  const alvo = limpar($("#conteudo"));
+  const hoje = new Date().toISOString().slice(0, 10);
+  const mesPassado = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+
+  const cxDe = h("input", { type: "date", value: mesPassado });
+  const cxAte = h("input", { type: "date", value: hoje });
+  const cxTipo = h("select", {},
+    h("option", { value: "", texto: "Todos os tipos" }),
+    ["entrada", "saida", "ajuste", "devolucao", "perda"].map((t) =>
+      h("option", { value: t, texto: rotuloTipo(t) })));
+  const cxFrente = h("select", {},
+    h("option", { value: "", texto: "Todas as frentes" }),
+    estado.cadastro.frentes.map((f) => h("option", { value: f.id, texto: f.nome })));
+  const cxPessoa = h("input", { placeholder: "Quem retirou" });
+
+  const resultado = h("div");
+
+  async function carregar() {
+    limpar(resultado).appendChild(esqueleto());
+    const p = new URLSearchParams();
+    if (itemId) p.set("item", itemId);
+    if (cxDe.value) p.set("de", cxDe.value);
+    if (cxAte.value) p.set("ate", cxAte.value);
+    if (cxTipo.value) p.set("tipo", cxTipo.value);
+    if (cxFrente.value) p.set("frente", cxFrente.value);
+    if (cxPessoa.value.trim()) p.set("pessoa", cxPessoa.value.trim());
+
+    const d = await api("/movimentos?" + p);
+    limpar(resultado);
+    if (!d.movimentos.length) {
+      resultado.appendChild(vazio("historico", "Nenhum movimento", "Tente ampliar o período."));
+      return;
+    }
+
+    // Agrupado por dia: "o que saiu ontem" é a pergunta real.
+    const porDia = new Map();
+    for (const m of d.movimentos) {
+      const dia = m.criado_em.slice(0, 10);
+      if (!porDia.has(dia)) porDia.set(dia, []);
+      porDia.get(dia).push(m);
+    }
+
+    for (const [dia, linhas] of porDia) {
+      resultado.append(
+        h("div", { class: "busca-grupo-titulo", style: "margin-top:14px",
+          texto: new Date(dia + "T12:00:00Z").toLocaleDateString("pt-BR",
+            { weekday: "long", day: "2-digit", month: "long" }) }),
+        h("div", { class: "cartao apertado" },
+          h("div", { class: "kardex" }, linhas.map((m) =>
+            h("div", { class: "kardex-linha " + (m.quantidade > 0 ? "entrada" : "saida"),
+                       style: "cursor:pointer", onclick: () => abrirItem(m.item_id) },
+              h("div", { class: "kardex-bola" },
+                icone(m.tipo === "ajuste" ? "ajuste" : m.quantidade > 0 ? "entrada" : "saida", 16)),
+              h("div", { class: "kardex-corpo" },
+                h("div", { class: "fila" },
+                  h("span", { class: "forte uma-linha cresce", texto: m.item }),
+                  h("span", { class: "kardex-qtd " + (m.quantidade > 0 ? "mais" : "menos"),
+                    texto: `${m.quantidade > 0 ? "+" : ""}${num(m.quantidade)} ${m.unidade}` })),
+                h("div", { class: "kardex-saldo",
+                  texto: [rotuloTipo(m.tipo), m.pessoa, m.frente, m.deposito, m.registrou]
+                    .filter(Boolean).join(" · ") })))))));
+    }
+  }
+
+  for (const c of [cxDe, cxAte, cxTipo, cxFrente]) c.addEventListener("change", carregar);
+  let t = null;
+  cxPessoa.addEventListener("input", () => { clearTimeout(t); t = setTimeout(carregar, 300) });
+
+  alvo.append(
+    h("div", { class: "cartao apertado", style: "margin-bottom:14px" },
+      h("div", { class: "grade c4" },
+        h("div", { class: "campo" }, h("label", { texto: "De" }), cxDe),
+        h("div", { class: "campo" }, h("label", { texto: "Até" }), cxAte),
+        h("div", { class: "campo" }, h("label", { texto: "Tipo" }), cxTipo),
+        h("div", { class: "campo" }, h("label", { texto: "Frente" }), cxFrente)),
+      h("div", { class: "fila", style: "margin-top:10px" },
+        h("div", { class: "campo cresce" }, cxPessoa),
+        h("button", { class: "btn fantasma", onclick: () => baixarCsv("movimentos", cxDe.value) },
+          icone("baixar", 18), h("span", { class: "so-computador" }, "Planilha")))),
+    resultado);
+
+  await carregar();
+}
+
+/* Não brigar com o Excel: quem tem medo de sistema novo se acalma sabendo
+   que pode levar tudo embora numa planilha. */
+async function baixarCsv(tipo, de) {
+  const r = await fetch(`/api/exportar/${tipo}` + (de ? `?de=${de}` : ""), {
+    headers: { authorization: "Bearer " + estado.token },
+  });
+  if (!r.ok) return recado("não consegui exportar", "erro");
+  const url = URL.createObjectURL(await r.blob());
+  const a = h("a", { href: url, download: `${tipo}-${new Date().toISOString().slice(0,10)}.csv` });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+</script>
+<script>
+"use strict";
+
+/* ============================================================
+   INVENTÁRIO — contagem física contra o sistema
+
+   O número que sai daqui é a acuracidade do estoque: a porcentagem de
+   itens em que o sistema acertou. É o indicador que o dono acompanha
+   subir mês a mês — e o que prova que o controle está sendo usado.
+   ============================================================ */
+
+async function telaInventario() {
+  const d = await api("/inventarios");
+  const alvo = limpar($("#conteudo"));
+
+  alvo.appendChild(h("div", { class: "acoes", style: "margin-bottom:14px" },
+    h("button", { class: "btn primario toque", onclick: () => novoInventario() },
+      icone("mais", 20), "Nova contagem")));
+
+  if (!d.inventarios.length) {
+    alvo.appendChild(vazio("ajuste", "Nenhuma contagem ainda",
+      "A contagem compara o que está na prateleira com o que o sistema diz, e mede quanto o estoque acerta."));
+    return;
+  }
+
+  alvo.appendChild(h("div", { class: "lista" }, d.inventarios.map((i) => {
+    const aberto = i.situacao === "aberto";
+    const pct = i.itens ? Math.round((i.contados / i.itens) * 100) : 0;
+    return h("button", { class: "linha", onclick: () => abrirInventario(i.id) },
+      h("div", { class: "linha-foto" }, icone("ajuste", 20)),
+      h("div", { class: "linha-corpo" },
+        h("div", { class: "linha-nome", texto: i.nome || `Contagem #${i.id}` }),
+        h("div", { class: "linha-meta" },
+          h("span", { texto: i.deposito }),
+          h("span", { class: "sep", texto: "·" }),
+          h("span", { texto: `${i.contados}/${i.itens} contados` }),
+          h("span", { class: "sep", texto: "·" }),
+          h("span", { texto: quando(i.criado_em) })),
+        aberto ? h("div", { class: "medidor ok", style: "margin-top:6px;max-width:200px" },
+          h("i", { style: `width:${pct}%` })) : null),
+      h("div", { class: "linha-fim" },
+        h("span", { class: "selo " + (aberto ? "atencao" : "ok"),
+                    texto: aberto ? "aberta" : "fechada" })));
+  })));
+}
+
+async function novoInventario() {
+  const cxDeposito = h("select", {},
+    estado.cadastro.depositos.map((d) => h("option", { value: d.id, texto: nomeDeposito(d) })));
+  const cxCategoria = h("select", {},
+    h("option", { value: "", texto: "Todas as categorias" }),
+    estado.cadastro.categorias.map((c) => h("option", { value: c.id, texto: c.nome })));
+  const cxNome = h("input", { placeholder: "Ex.: Contagem de agosto" });
+
+  abrir({
+    titulo: "Nova contagem",
+    corpo: h("div", { class: "pilha" },
+      h("div", { class: "aviso info" }, icone("ajuda", 18),
+        h("span", { texto: "O saldo do sistema é congelado agora. Movimento que acontecer durante a contagem não vira divergência." })),
+      h("div", { class: "campo" }, h("label", { texto: "Nome" }), cxNome),
+      h("div", { class: "campo" }, h("label", { texto: "Depósito" }), cxDeposito),
+      h("div", { class: "campo" },
+        h("label", { texto: "Contar só uma categoria" }), cxCategoria,
+        h("span", { class: "dica", texto: "Contagem por partes é mais fácil de terminar que a do galpão inteiro." }))),
+    pe: [
+      h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta() }),
+      h("button", { class: "btn primario", texto: "Abrir contagem", onclick: async (ev) => {
+        ev.currentTarget.disabled = true;
+        try {
+          const r = await api("/inventarios", { corpo: {
+            deposito_id: Number(cxDeposito.value),
+            categoria_id: cxCategoria.value ? Number(cxCategoria.value) : null,
+            nome: cxNome.value.trim() || null,
+          }});
+          solta(); abrirInventario(r.id);
+        } catch (e) { ev.currentTarget.disabled = false; recado(e.message, "erro") }
+      }}),
+    ],
+  });
+}
+
+async function abrirInventario(id) {
+  const d = await api(`/inventarios/${id}`);
+  const aberto = d.inventario.situacao === "aberto";
+  const alvo = limpar($("#conteudo"));
+  $("#titulo-tela").textContent = d.inventario.nome || `Contagem #${id}`;
+
+  alvo.appendChild(h("div", { class: "grade c4", style: "margin-bottom:14px" },
+    h("div", { class: "indicador" },
+      h("div", { class: "indicador-rotulo", texto: "Itens" }),
+      h("div", { class: "indicador-valor", texto: num(d.resumo.total) })),
+    h("div", { class: "indicador" },
+      h("div", { class: "indicador-rotulo", texto: "Contados" }),
+      h("div", { class: "indicador-valor", texto: num(d.resumo.contados) })),
+    h("div", { class: "indicador " + (d.resumo.divergentes ? "atencao" : "ok") },
+      h("div", { class: "indicador-rotulo", texto: "Divergências" }),
+      h("div", { class: "indicador-valor", texto: num(d.resumo.divergentes) })),
+    h("div", { class: "indicador " + (d.resumo.acuracidade >= 95 ? "ok" : "atencao") },
+      h("div", { class: "indicador-rotulo", texto: "Acuracidade" }),
+      h("div", { class: "indicador-valor",
+                 texto: d.resumo.acuracidade === null ? "—" : d.resumo.acuracidade + "%" }),
+      h("div", { class: "indicador-nota", texto: "sistema x prateleira" }))));
+
+  if (aberto) {
+    alvo.appendChild(h("div", { class: "acoes", style: "margin-bottom:14px" },
+      h("button", { class: "btn toque", onclick: async () => {
+        const achado = await escanear(true);
+        if (achado?.tipo === "item") contarItem(id, d.itens.find((i) => i.item_id === achado.id));
+      }}, icone("escanear", 20), "Escanear e contar"),
+      h("button", { class: "btn primario toque", onclick: async () => {
+        const ok = await perguntar("Fechar contagem",
+          `Cada divergência vira um ajuste no histórico, com seu nome e a data. ` +
+          `${d.resumo.total - d.resumo.contados} item(ns) não contado(s) ficam como estão.`,
+          "Fechar e ajustar");
+        if (!ok) return;
+        const r = await api(`/inventarios/${id}/fechar`, { metodo: "POST" });
+        recado(`contagem fechada · ${plural(r.ajustes, "ajuste lançado", "ajustes lançados")}`, "ok");
+        irPara("inventario");
+      }}, icone("certo", 20), "Fechar contagem")));
+  }
+
+  const lista = h("div", { class: "lista" });
+  for (const i of d.itens) {
+    const contado = i.contagem !== null;
+    const dif = contado ? i.contagem - i.saldo_sistema : 0;
+    const certo = contado && Math.abs(dif) < 0.001;
+    lista.appendChild(h("button", {
+      class: "linha " + (contado ? (certo ? "" : "atencao") : ""),
+      onclick: () => aberto ? contarItem(id, i) : abrirItem(i.item_id),
+    },
+      h("div", { class: "linha-foto" },
+        icone(contado ? (certo ? "certo" : "alerta") : "caixa", 20)),
+      h("div", { class: "linha-corpo" },
+        h("div", { class: "linha-nome uma-linha", texto: i.nome }),
+        h("div", { class: "linha-meta" },
+          h("span", { class: "mono", texto: i.codigo }),
+          i.localizacao ? h("span", { class: "sep", texto: "·" }) : null,
+          i.localizacao ? h("span", { texto: i.localizacao }) : null,
+          h("span", { class: "sep", texto: "·" }),
+          h("span", { texto: `sistema ${num(i.saldo_sistema)}` }))),
+      h("div", { class: "linha-fim" },
+        contado
+          ? h("div", { class: "linha-saldo " + (certo ? "ok" : "atencao") },
+              num(i.contagem), h("small", { texto: i.unidade }))
+          : h("span", { class: "selo", texto: "contar" }),
+        contado && !certo
+          ? h("div", { class: "mini", style: `color:var(--${dif > 0 ? "ok" : "critico"}-txt)`,
+                       texto: `${dif > 0 ? "+" : ""}${num(dif)}` })
+          : null)));
+  }
+  alvo.appendChild(lista);
+
+  async function contarItem(invId, item) {
+    if (!item) return recado("este item não está nesta contagem", "erro");
+    const n = await pedirNumero(`Contagem de ${item.nome}`, item.unidade,
+      item.contagem ?? "", "Digite o que você contou na prateleira — não o que o sistema diz.");
+    if (n === null) return;
+    await api(`/inventarios/${invId}/contar`, { corpo: { item_id: item.item_id, contagem: n } });
+    recado("contado", "ok");
+    abrirInventario(invId);
+  }
+}
+
+/* ============================================================
+   RELATÓRIOS
+   ============================================================ */
+
+const RELATORIOS = [
+  { id: "reposicao", rotulo: "O que comprar", icone: "caminhao",
+    nota: "Abaixo do mínimo, agrupado por fornecedor" },
+  { id: "consumo", rotulo: "Consumo por frente", icone: "grafico",
+    nota: "Quanto cada frente de serviço gastou" },
+  { id: "abc", rotulo: "Curva ABC", icone: "caixas",
+    nota: "Os poucos itens que são quase todo o dinheiro" },
+  { id: "validade", rotulo: "Vencimentos", icone: "calendario",
+    nota: "Lotes vencendo nos próximos 60 dias" },
+  { id: "parados", rotulo: "Estoque parado", icone: "relogio",
+    nota: "Sem movimento há mais de 90 dias" },
+];
+
+async function telaRelatorios() {
+  const alvo = limpar($("#conteudo"));
+  alvo.appendChild(h("div", { class: "grade auto" }, RELATORIOS.map((r) =>
+    h("button", { class: "cartao", style: "text-align:left", onclick: () => abrirRelatorio(r.id) },
+      h("div", { class: "fila", style: "margin-bottom:8px" },
+        h("div", { class: "marca-selo",
+                   style: "background:rgb(var(--acento-rgb)/.16);color:var(--acento);box-shadow:none" },
+          icone(r.icone, 20)),
+        h("div", { class: "cresce" })),
+      h("h3", { texto: r.rotulo }),
+      h("p", { class: "peq sutil", style: "margin-top:4px", texto: r.nota })))));
+
+  alvo.appendChild(h("div", { class: "cartao", style: "margin-top:16px" },
+    h("div", { class: "cartao-cab" }, h("h3", { texto: "Levar para a planilha" })),
+    h("div", { class: "acoes" },
+      h("button", { class: "btn fantasma", onclick: () => baixarCsv("estoque") },
+        icone("baixar", 18), "Estoque"),
+      h("button", { class: "btn fantasma", onclick: () => baixarCsv("movimentos") },
+        icone("baixar", 18), "Movimentos"),
+      h("button", { class: "btn fantasma", onclick: () => baixarCsv("ferramentas") },
+        icone("baixar", 18), "Ferramentas"))));
+}
+
+async function abrirRelatorio(qual) {
+  const alvo = limpar($("#conteudo"));
+  const def = RELATORIOS.find((r) => r.id === qual);
+  $("#titulo-tela").textContent = def?.rotulo || "Relatório";
+  alvo.appendChild(esqueleto());
+
+  const d = await api("/relatorios/" + qual);
+  limpar(alvo);
+  alvo.appendChild(h("button", { class: "btn plano", style: "margin-bottom:10px",
+    onclick: () => irPara("relatorios") }, icone("esquerda", 16), "Relatórios"));
+
+  const veDinheiro = estado.eu.ve_dinheiro;
+
+  if (qual === "reposicao") {
+    if (!d.linhas.length) {
+      alvo.appendChild(vazio("certo", "Nada para comprar", "Nenhum item abaixo do mínimo."));
+      return;
+    }
+    if (veDinheiro) {
+      alvo.appendChild(h("div", { class: "indicador destaque", style: "margin-bottom:14px" },
+        h("div", { class: "indicador-rotulo", texto: "Estimativa do pedido" }),
+        h("div", { class: "indicador-valor", texto: dinheiro(d.total) }),
+        h("div", { class: "indicador-nota", texto: "pelo último custo de compra" })));
+    }
+
+    const porFornecedor = new Map();
+    for (const l of d.linhas) {
+      if (!porFornecedor.has(l.fornecedor)) porFornecedor.set(l.fornecedor, []);
+      porFornecedor.get(l.fornecedor).push(l);
+    }
+    for (const [fornecedor, linhas] of porFornecedor) {
+      alvo.append(
+        h("div", { class: "busca-grupo-titulo", style: "margin-top:14px", texto: fornecedor }),
+        h("div", { class: "lista" }, linhas.map((l) =>
+          h("button", { class: "linha critico", onclick: () => abrirItem(l.id) },
+            h("div", { class: "linha-corpo" },
+              h("div", { class: "linha-nome uma-linha", texto: l.nome }),
+              h("div", { class: "linha-meta" },
+                h("span", { texto: `tem ${num(l.saldo)} · mínimo ${num(l.estoque_minimo)}` }),
+                l.dias_cobertura !== null ? h("span", { class: "sep", texto: "·" }) : null,
+                l.dias_cobertura !== null
+                  ? h("span", { texto: `dura ${num(l.dias_cobertura)} dias` }) : null)),
+            h("div", { class: "linha-fim" },
+              h("div", { class: "linha-saldo atencao" },
+                num(l.comprar_embalagem ?? l.comprar),
+                h("small", { texto: l.comprar_embalagem ? l.unidade_compra : l.unidade })),
+              veDinheiro && l.valor
+                ? h("div", { class: "mini sutil", texto: dinheiro(l.valor) }) : null)))));
+    }
+    return;
+  }
+
+  if (qual === "consumo") {
+    if (!d.linhas.length) {
+      alvo.appendChild(vazio("grafico", "Sem consumo no período", "Nenhuma saída registrada."));
+      return;
+    }
+    const maior = Math.max(...d.linhas.map((l) => veDinheiro ? l.valor_total : l.quantidade), 1);
+    alvo.appendChild(h("p", { class: "peq sutil", style: "margin-bottom:10px",
+      texto: `De ${d.periodo.de} até ${d.periodo.ate.slice(0, 10)}` }));
+    alvo.appendChild(h("div", { class: "cartao rolagem-x" },
+      h("table", { class: "dados" },
+        h("thead", {}, h("tr", {},
+          h("th", { texto: "Frente" }),
+          h("th", {}),
+          h("th", { class: "num", texto: "Itens" }),
+          veDinheiro ? h("th", { class: "num", texto: "Valor" }) : null)),
+        h("tbody", {}, d.linhas.map((l) => {
+          const v = veDinheiro ? l.valor_total : l.quantidade;
+          return h("tr", {},
+            h("td", {}, h("div", { class: "forte", texto: l.rotulo }),
+              l.obra ? h("div", { class: "mini sutil", texto: l.obra }) : null),
+            h("td", { style: "width:38%" },
+              h("div", { class: "barra-dado" },
+                h("i", { style: `width:${(v / maior) * 100}%` }))),
+            h("td", { class: "num", texto: num(l.itens) }),
+            veDinheiro ? h("td", { class: "num forte", texto: dinheiro(l.valor_total) }) : null);
+        })))));
+    return;
+  }
+
+  if (qual === "abc") {
+    if (!d.linhas.length) {
+      alvo.appendChild(vazio("caixas", "Sem dados de custo",
+        "A curva ABC precisa do custo das entradas para funcionar."));
+      return;
+    }
+    const classes = { A: [], B: [], C: [] };
+    for (const l of d.linhas) classes[l.classe].push(l);
+    alvo.appendChild(h("div", { class: "grade c3", style: "margin-bottom:14px" },
+      ["A", "B", "C"].map((c) => h("div", { class: "indicador " + (c === "A" ? "destaque" : "") },
+        h("div", { class: "indicador-rotulo", texto: `Classe ${c}` }),
+        h("div", { class: "indicador-valor", texto: num(classes[c].length) }),
+        h("div", { class: "indicador-nota",
+          texto: c === "A" ? "80% do valor" : c === "B" ? "os 15% seguintes" : "os últimos 5%" })))));
+    alvo.appendChild(h("div", { class: "cartao rolagem-x" },
+      h("table", { class: "dados" },
+        h("thead", {}, h("tr", {},
+          h("th", { texto: "Classe" }), h("th", { texto: "Item" }),
+          h("th", { class: "num", texto: "Saldo" }),
+          h("th", { class: "num", texto: "Valor" }),
+          h("th", { class: "num", texto: "% acum." }))),
+        h("tbody", {}, d.linhas.slice(0, 60).map((l) => h("tr", {
+          style: "cursor:pointer", onclick: () => abrirItem(l.id) },
+          h("td", {}, h("span", { class: "selo " + (l.classe === "A" ? "acento" : ""),
+                                  texto: l.classe })),
+          h("td", {}, h("div", { class: "forte uma-linha", texto: l.nome }),
+            h("div", { class: "mini sutil mono", texto: l.codigo })),
+          h("td", { class: "num", texto: `${num(l.quantidade)} ${l.unidade}` }),
+          h("td", { class: "num forte", texto: dinheiro(l.valor_total) }),
+          h("td", { class: "num sutil", texto: num(l.acumulado) + "%" })))))));
+    return;
+  }
+
+  if (qual === "validade") {
+    if (!d.linhas.length) {
+      alvo.appendChild(vazio("certo", "Nada vencendo", "Nenhum lote vence nos próximos 60 dias."));
+      return;
+    }
+    alvo.appendChild(h("div", { class: "lista" }, d.linhas.map((l) => {
+      const venceu = l.dias_restantes < 0;
+      return h("button", { class: "linha " + (venceu ? "critico" : "atencao"),
+                           onclick: () => abrirItem(l.item_id) },
+        h("div", { class: "linha-foto" }, icone("calendario", 20)),
+        h("div", { class: "linha-corpo" },
+          h("div", { class: "linha-nome uma-linha", texto: l.nome }),
+          h("div", { class: "linha-meta" },
+            h("span", { class: "mono", texto: l.lote || "sem lote" }),
+            h("span", { class: "sep", texto: "·" }),
+            h("span", { texto: new Date(l.validade + "T12:00:00Z").toLocaleDateString("pt-BR") }))),
+        h("div", { class: "linha-fim" },
+          h("div", { class: "linha-saldo " + (venceu ? "critico" : "atencao") },
+            num(l.quantidade), h("small", { texto: l.unidade })),
+          h("span", { class: "mini sutil",
+            texto: venceu ? `vencido há ${-l.dias_restantes}d` : `faltam ${l.dias_restantes}d` })));
+    })));
+    return;
+  }
+
+  if (qual === "parados") {
+    if (!d.linhas.length) {
+      alvo.appendChild(vazio("certo", "Nada parado", "Todo item com saldo se moveu nos últimos 90 dias."));
+      return;
+    }
+    if (veDinheiro) {
+      const total = d.linhas.reduce((s, l) => s + (l.valor_total || 0), 0);
+      alvo.appendChild(h("div", { class: "indicador atencao", style: "margin-bottom:14px" },
+        h("div", { class: "indicador-rotulo", texto: "Dinheiro dormindo na prateleira" }),
+        h("div", { class: "indicador-valor", texto: dinheiro(total) }),
+        h("div", { class: "indicador-nota", texto: `em ${plural(d.linhas.length, "item", "itens")}` })));
+    }
+    alvo.appendChild(h("div", { class: "lista" }, d.linhas.map((l) =>
+      h("button", { class: "linha", onclick: () => abrirItem(l.id) },
+        h("div", { class: "linha-foto" }, icone("relogio", 20)),
+        h("div", { class: "linha-corpo" },
+          h("div", { class: "linha-nome uma-linha", texto: l.nome }),
+          h("div", { class: "linha-meta" },
+            h("span", { texto: l.ultimo_movimento
+              ? "último movimento " + quando(l.ultimo_movimento) : "nunca movimentado" }),
+            l.localizacao ? h("span", { class: "sep", texto: "·" }) : null,
+            l.localizacao ? h("span", { texto: l.localizacao }) : null)),
+        h("div", { class: "linha-fim" },
+          h("div", { class: "linha-saldo" }, num(l.saldo), h("small", { texto: l.unidade })),
+          veDinheiro && l.valor_total
+            ? h("div", { class: "mini sutil", texto: dinheiro(l.valor_total) }) : null)))));
+  }
+}
+
+/* ============================================================
+   CADASTRO
+   ============================================================ */
+
+async function telaCadastro() {
+  const c = estado.cadastro = await api("/cadastro");
+  const alvo = limpar($("#conteudo"));
+
+  alvo.appendChild(h("div", { class: "acoes", style: "margin-bottom:16px" },
+    h("button", { class: "btn primario toque", onclick: () => formItem() },
+      icone("mais", 20), "Novo item"),
+    h("button", { class: "btn toque", onclick: () => telaEtiquetas() },
+      icone("etiqueta", 20), "Imprimir etiquetas"),
+    h("button", { class: "btn toque", onclick: () => trocarPin() },
+      icone("gente", 20), "Meu PIN")));
+
+  const grupos = [
+    { chave: "obras", rotulo: "Obras", icone: "lugar", campos: ["codigo", "nome", "endereco", "responsavel"] },
+    { chave: "depositos", rotulo: "Depósitos", icone: "caixas", campos: ["nome"], obra: true },
+    { chave: "frentes", rotulo: "Frentes de serviço", icone: "papel", campos: ["codigo", "nome"], obra: true },
+    { chave: "categorias", rotulo: "Categorias", icone: "caixa", campos: ["nome"] },
+    { chave: "fornecedores", rotulo: "Fornecedores", icone: "caminhao", campos: ["nome", "contato", "telefone"] },
+  ];
+
+  alvo.appendChild(h("div", { class: "grade c2" }, grupos.map((g) =>
+    h("div", { class: "cartao" },
+      h("div", { class: "cartao-cab" },
+        icone(g.icone, 18), h("h3", { texto: g.rotulo }),
+        h("button", { class: "btn-icone", "aria-label": "Adicionar",
+                      onclick: () => formCadastro(g) }, icone("mais", 18))),
+      c[g.chave].length
+        ? h("div", { class: "pilha apertada" }, c[g.chave].slice(0, 8).map((x) =>
+            h("div", { class: "fila" },
+              h("span", { class: "peq cresce uma-linha", texto: x.nome }),
+              x.codigo ? h("span", { class: "mini mono sutil", texto: x.codigo }) : null)))
+        : h("p", { class: "peq sutil", texto: "Nada cadastrado ainda." }),
+      c[g.chave].length > 8
+        ? h("p", { class: "mini sutil", style: "margin-top:8px",
+                   texto: `e mais ${c[g.chave].length - 8}` }) : null))));
+
+  if (c.usuarios?.length) {
+    alvo.appendChild(h("div", { class: "cartao", style: "margin-top:12px" },
+      h("div", { class: "cartao-cab" }, icone("gente", 18), h("h3", { texto: "Pessoas" })),
+      h("div", { class: "pilha apertada" }, c.usuarios.map((u) =>
+        h("div", { class: "fila" },
+          h("span", { class: "peq cresce", texto: u.nome }),
+          h("span", { class: "selo", texto: rotuloPapel(u.papel) }))))));
+  }
+}
+
+function formCadastro(g) {
+  const campos = {};
+  const corpo = h("div", { class: "pilha" });
+
+  if (g.obra) {
+    campos.obra_id = h("select", {},
+      estado.cadastro.obras.map((o) => h("option", { value: o.id, texto: o.nome })));
+    corpo.appendChild(h("div", { class: "campo" }, h("label", { texto: "Obra" }), campos.obra_id));
+  }
+  const rotulos = { codigo: "Código", nome: "Nome", endereco: "Endereço",
+                    responsavel: "Responsável", contato: "Contato", telefone: "Telefone" };
+  for (const c of g.campos) {
+    campos[c] = h("input", { autocomplete: "off" });
+    corpo.appendChild(h("div", { class: "campo" },
+      h("label", { texto: rotulos[c] || c }), campos[c]));
+  }
+
+  abrir({
+    titulo: "Novo em " + g.rotulo,
+    corpo,
+    pe: [
+      h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta() }),
+      h("button", { class: "btn primario", texto: "Salvar", onclick: async (ev) => {
+        const dados = {};
+        for (const [k, el] of Object.entries(campos)) {
+          const v = el.value.trim();
+          if (v) dados[k] = k === "obra_id" ? Number(v) : v;
+        }
+        if (!dados.nome) return recado("o nome é obrigatório", "erro");
+        ev.currentTarget.disabled = true;
+        try {
+          await api("/cadastro/" + g.chave, { corpo: dados });
+          solta(); recado("cadastrado", "ok"); irPara("cadastro");
+        } catch (e) { ev.currentTarget.disabled = false; recado(e.message, "erro") }
+      }}),
+    ],
+  });
+}
+
+function formItem(item = null, nomeSugerido = "", codigoSugerido = "") {
+  const c = estado.cadastro;
+  const campo = (props) => h("input", { autocomplete: "off", ...props });
+
+  const cxCodigo = campo({ value: item?.codigo || codigoSugerido, autocapitalize: "characters" });
+  const cxNome = campo({ value: item?.nome || nomeSugerido });
+  const cxCategoria = h("select", {},
+    h("option", { value: "", texto: "— sem categoria —" }),
+    c.categorias.map((x) => h("option", { value: x.id, texto: x.nome,
+                                          selected: item?.categoria_id === x.id })));
+  const cxTipo = h("select", {},
+    h("option", { value: "consumo", texto: "Material de consumo (tem saldo)" }),
+    h("option", { value: "ferramenta", texto: "Ferramenta (tem dono)",
+                  selected: item?.tipo === "ferramenta" }));
+  const cxUnidade = campo({ value: item?.unidade || "un", placeholder: "un, kg, m, L" });
+  const cxUnidadeCompra = campo({ value: item?.unidade_compra || "", placeholder: "saco, caixa, rolo" });
+  const cxFator = campo({ type: "number", step: "0.001", value: item?.fator_conversao || 1 });
+  const cxLocal = campo({ value: item?.localizacao || "", placeholder: "Prateleira A3" });
+  const cxMinimo = campo({ type: "number", step: "0.01", value: item?.estoque_minimo ?? 0 });
+  const cxMaximo = campo({ type: "number", step: "0.01", value: item?.estoque_maximo ?? "" });
+  const cxEan = campo({ value: item?.ean || "", placeholder: "código de barras do fabricante" });
+  const cxFornecedor = h("select", {},
+    h("option", { value: "", texto: "— sem fornecedor —" }),
+    c.fornecedores.map((x) => h("option", { value: x.id, texto: x.nome,
+                                            selected: item?.fornecedor_id === x.id })));
+  const cxLote = h("input", { type: "checkbox", checked: item?.controla_lote ? true : null });
+  const cxSinonimos = campo({ placeholder: "ferro, vergalhão, CA-50" });
+  if (item) cxTipo.value = item.tipo;
+
+  abrir({
+    titulo: item ? "Editar item" : "Novo item",
+    corpo: h("div", { class: "pilha" },
+      h("div", { class: "grade c2 firme" },
+        h("div", { class: "campo" }, h("label", { texto: "Código" }), cxCodigo),
+        h("div", { class: "campo" }, h("label", { texto: "Unidade de uso" }), cxUnidade)),
+      h("div", { class: "campo" }, h("label", { texto: "Nome" }), cxNome),
+      h("div", { class: "campo" }, h("label", { texto: "Tipo" }), cxTipo),
+      h("div", { class: "campo" }, h("label", { texto: "Categoria" }), cxCategoria),
+
+      h("div", { class: "campo" },
+        h("label", { texto: "Onde os outros nomes entram" }), cxSinonimos,
+        h("span", { class: "dica",
+          texto: "Separe por vírgula. O engenheiro escreve “vergalhão”, o pedreiro fala “ferro”, a nota diz “CA-50”. Os três precisam achar." })),
+
+      h("hr", { class: "separador" }),
+      h("div", { class: "grade c2 firme" },
+        h("div", { class: "campo" }, h("label", { texto: "Compra em" }), cxUnidadeCompra),
+        h("div", { class: "campo" }, h("label", { texto: "Quantos por embalagem" }), cxFator)),
+      h("p", { class: "dica sutil",
+        texto: "Compra em saco e consome em quilo? Preencha aqui — o sistema converte na entrada." }),
+
+      h("div", { class: "grade c2 firme" },
+        h("div", { class: "campo" }, h("label", { texto: "Estoque mínimo" }), cxMinimo),
+        h("div", { class: "campo" }, h("label", { texto: "Estoque ideal" }), cxMaximo)),
+      h("div", { class: "grade c2 firme" },
+        h("div", { class: "campo" }, h("label", { texto: "Localização" }), cxLocal),
+        h("div", { class: "campo" }, h("label", { texto: "Cód. de barras" }), cxEan)),
+      h("div", { class: "campo" }, h("label", { texto: "Fornecedor" }), cxFornecedor),
+      h("label", { class: "fila", style: "cursor:pointer" }, cxLote,
+        h("span", { class: "peq", texto: "Controla lote e validade (EPI, cimento, epóxi)" }))),
+    pe: [
+      h("button", { class: "btn fantasma", texto: "Cancelar", onclick: () => solta() }),
+      h("button", { class: "btn primario", texto: "Salvar", onclick: async (ev) => {
+        if (!cxCodigo.value.trim() || !cxNome.value.trim()) {
+          return recado("código e nome são obrigatórios", "erro");
+        }
+        ev.currentTarget.disabled = true;
+        const dados = {
+          codigo: cxCodigo.value.trim().toUpperCase(),
+          nome: cxNome.value.trim(),
+          categoria_id: cxCategoria.value ? Number(cxCategoria.value) : null,
+          tipo: cxTipo.value,
+          unidade: cxUnidade.value.trim() || "un",
+          unidade_compra: cxUnidadeCompra.value.trim() || null,
+          fator_conversao: Number(cxFator.value) || 1,
+          localizacao: cxLocal.value.trim() || null,
+          estoque_minimo: Number(cxMinimo.value) || 0,
+          estoque_maximo: cxMaximo.value ? Number(cxMaximo.value) : null,
+          ean: cxEan.value.trim() || null,
+          fornecedor_id: cxFornecedor.value ? Number(cxFornecedor.value) : null,
+          controla_lote: cxLote.checked ? 1 : 0,
+          sinonimos: cxSinonimos.value.split(",").map((s) => s.trim()).filter(Boolean),
+        };
+        try {
+          if (item) {
+            delete dados.codigo; delete dados.sinonimos;
+            await api(`/itens/${item.id}`, { metodo: "PATCH", corpo: dados });
+            for (const t of cxSinonimos.value.split(",").map((s) => s.trim()).filter(Boolean)) {
+              await api(`/itens/${item.id}/sinonimos`, { corpo: { termo: t } });
+            }
+          } else {
+            await api("/itens", { corpo: dados });
+          }
+          solta(); recado("salvo", "ok"); irPara(estado.tela);
+        } catch (e) { ev.currentTarget.disabled = false; recado(e.message, "erro") }
+      }}),
+    ],
+  });
+}
+
+async function trocarPin() {
+  const pin = await pedirNumero("Seu PIN de recebimento", "", "",
+    "4 dígitos. É o que você digita quando recebe material — vale como assinatura.");
+  if (pin === null) return;
+  const texto = String(Math.round(pin)).padStart(4, "0");
+  if (texto.length !== 4) return recado("o PIN tem 4 dígitos", "erro");
+  try {
+    await api(`/usuarios/${estado.eu.id}/pin`, { corpo: { pin: texto } });
+    recado("PIN atualizado", "ok");
+  } catch (e) { recado(e.message, "erro") }
+}
+
+/* ============================================================
+   ETIQUETAS
+
+   Papel comum e tesoura resolvem no primeiro dia. Exigir impressora
+   térmica para começar é o tipo de barreira que faz o sistema não sair
+   do papel. O QR guarda a URL do item, então a câmera de qualquer celular
+   abre o sistema já no lugar certo.
+   ============================================================ */
+
+async function telaEtiquetas() {
+  const alvo = limpar($("#conteudo"));
+  $("#titulo-tela").textContent = "Etiquetas";
+  const escolhidos = new Set();
+
+  const campo = h("input", { type: "search", placeholder: "Filtrar itens…",
+    oninput: () => { clearTimeout(t); t = setTimeout(carregar, 220) } });
+  let t = null;
+  const lista = h("div", { class: "lista" });
+  const barra = h("div", { class: "acoes", style: "margin:12px 0" });
+
+  function pintarBarra() {
+    limpar(barra).append(
+      h("button", { class: "btn primario toque", disabled: escolhidos.size ? null : true,
+        onclick: () => imprimirEtiquetas([...escolhidos]) },
+        icone("imprimir", 20), `Imprimir ${escolhidos.size || ""}`.trim()),
+      h("button", { class: "btn toque", onclick: () => { escolhidos.clear(); carregar() } },
+        "Limpar"));
+  }
+
+  async function carregar() {
+    const p = new URLSearchParams({ limite: "60" });
+    if (campo.value.trim()) p.set("q", campo.value.trim());
+    const r = await api("/busca?" + p);
+    limpar(lista);
+    for (const i of r.itens) {
+      const marcado = escolhidos.has(i.id);
+      lista.appendChild(h("button", { class: "linha", onclick: (ev) => {
+        escolhidos.has(i.id) ? escolhidos.delete(i.id) : escolhidos.add(i.id);
+        carregar(); pintarBarra();
+      }},
+        h("div", { class: "linha-foto",
+          style: marcado ? "background:var(--acento);color:var(--acento-txt)" : "" },
+          icone(marcado ? "certo" : "etiqueta", 20)),
+        h("div", { class: "linha-corpo" },
+          h("div", { class: "linha-nome uma-linha", texto: i.nome }),
+          h("div", { class: "linha-meta" },
+            h("span", { class: "mono", texto: i.codigo }),
+            i.localizacao ? h("span", { class: "sep", texto: "·" }) : null,
+            i.localizacao ? h("span", { texto: i.localizacao }) : null))));
+    }
+    pintarBarra();
+  }
+
+  alvo.append(
+    h("p", { class: "peq sutil", style: "margin-bottom:10px",
+      texto: "Escolha os itens e imprima em folha A4 comum. Cada etiqueta traz o QR e o código escrito — se a câmera falhar, dá para digitar." }),
+    h("div", { class: "busca-caixa" }, icone("busca", 20), campo),
+    barra, lista);
+  await carregar();
+}
+
+function imprimirEtiquetas(itens = [], ferramentas = []) {
+  const p = new URLSearchParams();
+  if (itens.length) p.set("itens", itens.join(","));
+  if (ferramentas.length) p.set("ferramentas", ferramentas.join(","));
+  // A folha abre em aba própria e imprime de lá: a página de impressão tem
+  // margem zero e grade em milímetros, que não convivem com a tela do app.
+  const janela = window.open("/api/etiquetas?" + p, "_blank");
+  if (!janela) recado("libere as janelas para imprimir a etiqueta", "erro");
+}
+
+/* ============================================================
+   TOUR — nosso, não de biblioteca
+
+   Rearmar = subir TOUR_VERSAO. A versão faz parte da chave do "já vi";
+   sem isso, passo novo nunca chega em quem já usava o sistema.
+
+   A marca do "já vi" mora no localStorage COM o id da pessoa na chave:
+   uma vez por pessoa, em cada aparelho. É de propósito nos dois sentidos —
+   o tablet do almoxarifado é compartilhado e cada um que entra precisa
+   aprender; e quem usa celular e computador aprende nos dois, onde a tela
+   é diferente.
+   ============================================================ */
+
+const TOUR_VERSAO = 1;
+
+const TRILHAS = {
+  almoxarife: [
+    { alvo: "#cx-busca-caixa", titulo: "Ache em três segundos",
+      texto: "Uma caixa só: nome, código, prateleira, código de barras — ou o apelido que o pessoal usa na obra.",
+      tela: "busca" },
+    { alvo: "#bt-escanear", titulo: "Ou escaneie a etiqueta",
+      texto: "Aponte a câmera para o QR. Não leu? O código vem escrito na etiqueta." },
+    { alvo: "#ac-baixa", titulo: "Dar baixa é o que você mais faz",
+      texto: "Item, quantidade, para qual frente. Três toques e o saldo já mudou.",
+      tela: "inicio", mesmoSemAlvo: true },
+    { alvo: "[data-tela=requisicoes]", titulo: "A fila de pedidos",
+      texto: "O encarregado pede pelo celular. Você separa e entrega com o PIN de quem recebe — isso é a prova de entrega.",
+      mesmoSemAlvo: true },
+  ],
+  encarregado: [
+    { alvo: "#cx-busca-caixa", titulo: "Veja o que tem no almoxarifado",
+      texto: "Antes de descer, confira o saldo aqui.", tela: "busca" },
+    { alvo: "[data-tela=requisicoes]", titulo: "Peça sem sair da frente de serviço",
+      texto: "Monte a lista pelo celular. O almoxarife já vê o pedido na hora.",
+      mesmoSemAlvo: true },
+  ],
+  engenheiro: [
+    { alvo: "#cx-criticos", titulo: "O que está faltando",
+      texto: "Abaixo do mínimo aparece já na abertura, ordenado pelo mais crítico.",
+      tela: "inicio", mesmoSemAlvo: true },
+    { alvo: "[data-tela=relatorios]", titulo: "Consumo por frente",
+      texto: "Quanto cada frente de serviço gastou, com valor. É o número que fecha a medição.",
+      mesmoSemAlvo: true },
+    { alvo: "[data-tela=inventario]", titulo: "Contagem e acuracidade",
+      texto: "Conte a prateleira, compare com o sistema, e acompanhe o acerto subir mês a mês.",
+      mesmoSemAlvo: true },
+  ],
+};
+TRILHAS.admin = TRILHAS.engenheiro;
+
+let tourPasso = 0, tourTrilha = null, tourElementos = [];
+
+function chaveTour() {
+  return `almox.tour.${estado.eu.id}.v${TOUR_VERSAO}`;
+}
+
+function talvezMostrarTour() {
+  if (localStorage.getItem(chaveTour())) return;
+  // A marca é conferida DE NOVO na hora de disparar, não só na de agendar:
+  // no meio desses 700ms a pessoa pode ter aberto e dispensado o tour pelo
+  // "?" do topo, e ele voltaria por cima do que ela já estava fazendo.
+  setTimeout(() => {
+    if (!estado.eu || localStorage.getItem(chaveTour())) return;
+    comecarTour();
+  }, 700);
+}
+
+async function comecarTour() {
+  tourTrilha = TRILHAS[estado.eu.papel] || TRILHAS.encarregado;
+  tourPasso = 0;
+  await mostrarPasso();
+}
+
+async function mostrarPasso() {
+  fecharTour(false);
+  const passo = tourTrilha[tourPasso];
+  if (!passo) return terminarTour();
+
+  if (passo.tela && estado.tela !== passo.tela) {
+    await irPara(passo.tela);
+    await new Promise((r) => setTimeout(r, 180));
+  }
+
+  const alvo = passo.alvo ? document.querySelector(passo.alvo) : null;
+  // Passo essencial aparece centralizado mesmo sem o alvo na tela. Sem
+  // isso, quem entra com a fila vazia — o caso comum do primeiro dia —
+  // nunca veria a explicação do que é a fila.
+  if (!alvo && !passo.mesmoSemAlvo) { tourPasso++; return mostrarPasso() }
+
+  const fundo = h("div", { class: "tour-fundo", onclick: () => terminarTour() });
+  document.body.appendChild(fundo);
+  tourElementos.push(fundo);
+
+  let topoBalao = "50%", esquerdaBalao = "50%", transformar = "translate(-50%,-50%)";
+
+  if (alvo) {
+    const r = alvo.getBoundingClientRect();
+    const realce = h("div", { class: "tour-alvo", style:
+      `top:${r.top - 6}px;left:${r.left - 6}px;width:${r.width + 12}px;height:${r.height + 12}px` });
+    document.body.appendChild(realce);
+    tourElementos.push(realce);
+
+    const abaixo = r.bottom + 190 < window.innerHeight;
+    topoBalao = (abaixo ? r.bottom + 14 : r.top - 14) + "px";
+    esquerdaBalao = Math.min(Math.max(r.left, 14), window.innerWidth - 14) + "px";
+    transformar = abaixo ? "none" : "translateY(-100%)";
+  }
+
+  const balao = h("div", { class: "tour-balao",
+    style: `top:${topoBalao};left:${esquerdaBalao};transform:${transformar}` },
+    h("div", { class: "tour-passo", texto: `${tourPasso + 1} de ${tourTrilha.length}` }),
+    h("h3", { texto: passo.titulo }),
+    h("p", { texto: passo.texto }),
+    h("div", { class: "acoes fim", style: "margin-top:12px" },
+      h("button", { class: "btn plano", texto: "Pular", onclick: () => terminarTour() }),
+      h("button", { class: "btn primario", texto: tourPasso === tourTrilha.length - 1 ? "Entendi" : "Próximo",
+        onclick: () => { tourPasso++; mostrarPasso() } })));
+  document.body.appendChild(balao);
+  tourElementos.push(balao);
+}
+
+function fecharTour(tudo = true) {
+  for (const e of tourElementos) e.remove();
+  tourElementos = [];
+}
+
+function terminarTour() {
+  fecharTour();
+  if (estado.eu) localStorage.setItem(chaveTour(), "1");
+}
+
+/* ============================================================
+   PARTIDA
+   ============================================================ */
+
+if (estado.token) comecar();
+else telaLogin();
+</script>
+</body>
+</html>
