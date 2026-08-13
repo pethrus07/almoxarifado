@@ -234,17 +234,29 @@ p:last-child { margin-bottom: 0 }
 
 /* Marca da empresa no topo do celular. É também o botão de conta — a única
    porta para sair, trocar tema e rever o passo a passo, já que a lateral
-   que tem esses três some no aparelho. */
+   que tem esses três some no aparelho.
+
+   ⚠️ Traz a própria regra de aparecer e NÃO usa `.so-celular`: aquela
+   classe declara `display`, vem depois na folha e venceria o `grid` daqui
+   (mesma especificidade, ganha a última). O botão continuava com 40x40,
+   mas virava `block` — e as iniciais paravam de centralizar. Componente
+   que tem `display` próprio não pode depender de utilitário que mexe em
+   `display`; declara a própria media query. */
 .botao-conta {
+  display: none;
   width: 40px; height: 40px; flex: none;
   border-radius: 12px;
   background: var(--acento); color: var(--acento-txt);
-  display: grid; place-items: center;
+  place-items: center;
   font-weight: 800; font-size: .85rem; letter-spacing: -.02em;
   box-shadow: 0 2px 10px rgb(var(--acento-rgb) / .3);
   transition: transform .08s;
 }
 .botao-conta:active { transform: scale(.94) }
+
+@media (max-width: 860px) {
+  .botao-conta { display: grid }
+}
 
 .barra-baixo { display: none }
 
@@ -893,9 +905,16 @@ table.dados th.num, table.dados td.num { text-align: right }
   scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
 }
 .rolagem-lado > * { scroll-snap-align: start; flex: none }
-.so-celular { display: none }
+/* ESCONDER no celular. Só isto, e de propósito.
+
+   Não existe um `.so-celular` que MOSTRE: um utilitário assim precisa
+   declarar `display`, e aí atropela o `display` de qualquer componente que
+   tenha o seu — foi o que aconteceu com `.botao-conta`, que virou `block`
+   e parou de centralizar as iniciais, continuando 40x40 e parecendo certo.
+   Quem precisa aparecer só no celular declara a própria media query, junto
+   com o resto das suas regras. Esconder é seguro porque `none` é o que se
+   quer de qualquer jeito — por isso o `!important` cabe aqui. */
 @media (max-width: 860px) {
-  .so-celular { display: initial }
   .so-computador { display: none !important }
 }
 .aviso {

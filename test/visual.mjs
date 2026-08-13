@@ -217,11 +217,21 @@ console.log("\nCelular · almoxarife");
   await p.waitForTimeout(400);
   conferir(await p.isVisible("#bt-conta"), "o botão de conta aparece no topo do celular");
 
-  const alvoConta = await p.evaluate(() => {
-    const r = document.querySelector("#bt-conta")?.getBoundingClientRect();
-    return r ? Math.round(Math.min(r.width, r.height)) : 0;
+  /* Mede a caixa E o display. Só a caixa não bastava: quando a classe
+     utilitária atropelava o `display: grid`, o botão continuava 40x40 e
+     passava na afirmação — mas virava `block` e as iniciais colavam no
+     canto em vez de centralizar. */
+  const conta = await p.evaluate(() => {
+    const e = document.querySelector("#bt-conta");
+    if (!e) return null;
+    const r = e.getBoundingClientRect();
+    return { lado: Math.round(Math.min(r.width, r.height)),
+             display: getComputedStyle(e).display };
   });
-  conferir(alvoConta >= 40, `o botão de conta tem pelo menos 40px (tem ${alvoConta})`);
+  conferir(conta && conta.lado >= 40,
+    `o botão de conta tem pelo menos 40px (tem ${conta?.lado})`);
+  conferir(conta && conta.display === "grid",
+    `o botão de conta centraliza as iniciais (display ${conta?.display})`);
 
   await p.click("#bt-conta");
   await p.waitForSelector("dialog[open]");
