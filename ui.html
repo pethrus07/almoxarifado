@@ -72,9 +72,13 @@
 
   <main class="principal">
     <header class="topo">
-      <button class="btn-icone so-celular" id="bt-marca-celular"></button>
+      <!-- No celular esta é a ÚNICA porta para sair, trocar o tema e rever o
+           passo a passo: a lateral que tem esses três some por media query. -->
+      <button class="botao-conta so-celular" id="bt-conta"
+              aria-label="Sua conta, tema e sair"></button>
       <h1 id="titulo-tela" class="cresce uma-linha">Início</h1>
-      <button class="btn-icone" id="bt-escanear" title="Escanear etiqueta"></button>
+      <button class="btn-icone toque" id="bt-escanear" title="Escanear etiqueta"
+              aria-label="Escanear etiqueta"></button>
       <button class="btn-icone so-computador" id="bt-ajuda-topo" title="Como usar">?</button>
     </header>
     <div class="conteudo" id="conteudo"></div>
@@ -627,7 +631,8 @@ async function comecar() {
     limpar($("#bt-sair")).append(icone("sair", 18), h("span", { texto: "Sair" }));
     limpar($("#bt-ajuda")).append(icone("ajuda", 18), h("span", { texto: "Como usar" }));
     limpar($("#bt-escanear")).appendChild(icone("escanear", 22));
-    limpar($("#bt-marca-celular")).appendChild(icone("caixas", 22));
+    // A sigla da empresa no topo do celular é marca E botão de conta.
+    $("#bt-conta").textContent = sigla;
 
     estado.cadastro = await api("/cadastro");
 
@@ -660,9 +665,72 @@ const rotuloPapel = (p) => ({
 $("#bt-sair").addEventListener("click", sair);
 $("#bt-tema").addEventListener("click", () => trocarTema());
 $("#bt-escanear").addEventListener("click", () => escanear());
-$("#bt-marca-celular").addEventListener("click", () => irPara("inicio"));
+$("#bt-conta").addEventListener("click", () => folhaConta());
 $("#bt-ajuda").addEventListener("click", () => comecarTour());
 $("#bt-ajuda-topo").addEventListener("click", () => comecarTour());
+
+/* ============================================================
+   CONTA — no celular, é a única porta para sair e trocar o tema
+
+   A lateral do computador some por media query no celular, e com ela iam
+   embora Sair, Tema e Como usar: no aparelho não havia como fazer nenhum
+   dos três. O botão da marca, no canto do topo, abre esta folha.
+
+   O PIN também mora aqui, e não só no Cadastro: quem mais precisa dele é
+   o encarregado — é o que ele digita para receber material — e o
+   encarregado não tem aba de Cadastro nenhuma.
+   ============================================================ */
+
+function folhaConta() {
+  const eu = estado.eu;
+  const emp = eu.empresa;
+  const escuro = document.documentElement.dataset.tema !== "claro";
+
+  const opcao = (ic, titulo, nota, aoClicar, perigo) =>
+    h("button", { class: "linha", onclick: aoClicar },
+      h("div", { class: "linha-foto",
+        style: perigo ? "color:var(--critico-txt)" : "" }, icone(ic, 20)),
+      h("div", { class: "linha-corpo" },
+        h("div", { class: "linha-nome", texto: titulo,
+          style: perigo ? "color:var(--critico-txt)" : "" }),
+        nota ? h("div", { class: "linha-meta" }, h("span", { texto: nota })) : null),
+      icone("direita", 18));
+
+  abrir({
+    titulo: "Sua conta",
+    corpo: h("div", { class: "pilha" },
+      h("div", { class: "cartao fila" },
+        h("div", { class: "marca-selo" }, emp.logo || emp.nome.slice(0, 2).toUpperCase()),
+        h("div", { class: "cresce", style: "min-width:0" },
+          h("div", { class: "forte uma-linha", texto: eu.nome }),
+          h("div", { class: "peq sutil uma-linha",
+                     texto: `${rotuloPapel(eu.papel)} · ${emp.nome}` }))),
+
+      /* Estas duas abrem OUTRA folha por cima: chamam direto, sem `solta()`.
+         `abrir()` troca o conteúdo do dialog que já está aberto — fechar
+         antes faria o evento `close` chegar atrasado e cancelar a folha
+         seguinte, e o toque simplesmente não faria nada. */
+      h("div", { class: "lista" },
+        opcao("gente", "Meu PIN", "os 4 dígitos que confirmam o recebimento",
+          () => trocarPin()),
+
+        opcao(escuro ? "sol" : "lua",
+          escuro ? "Tema claro" : "Tema escuro",
+          escuro ? "para o escritório e a luz do dia" : "para o galpão de luz baixa",
+          () => { trocarTema(); folhaConta() }),
+
+        // Esta FECHA de verdade: o passo a passo precisa da tela à mostra.
+        opcao("ajuda", "Como usar", "refaz o passo a passo da sua função",
+          () => { solta(); comecarTour() }),
+
+        opcao("sair", "Sair", `sessão de ${eu.login}`,
+          async () => {
+            const certeza = await perguntar("Sair do sistema",
+              "Você vai precisar entrar de novo com sua senha.", "Sair", true);
+            if (certeza) sair();
+          }, true))),
+  });
+}
 
 /* Atalhos de teclado — o engenheiro usa computador, e `/` para buscar é o
    detalhe que ele percebe. */
@@ -2346,7 +2414,9 @@ async function abrirRelatorio(qual) {
         h("thead", {}, h("tr", {},
           h("th", { texto: "Frente" }),
           h("th", {}),
-          h("th", { class: "num", texto: "Itens" }),
+          // "Itens" é a coluna menos útil das quatro: sai no celular para
+          // as outras três caberem sem rolagem lateral.
+          h("th", { class: "num so-computador", texto: "Itens" }),
           veDinheiro ? h("th", { class: "num", texto: "Valor" }) : null)),
         h("tbody", {}, d.linhas.map((l) => {
           const v = veDinheiro ? l.valor_total : l.quantidade;
@@ -2356,7 +2426,7 @@ async function abrirRelatorio(qual) {
             h("td", { style: "width:38%" },
               h("div", { class: "barra-dado" },
                 h("i", { style: `width:${(v / maior) * 100}%` }))),
-            h("td", { class: "num", texto: num(l.itens) }),
+            h("td", { class: "num so-computador", texto: num(l.itens) }),
             veDinheiro ? h("td", { class: "num forte", texto: dinheiro(l.valor_total) }) : null);
         })))));
     return;
@@ -2376,22 +2446,31 @@ async function abrirRelatorio(qual) {
         h("div", { class: "indicador-valor", texto: num(classes[c].length) }),
         h("div", { class: "indicador-nota",
           texto: c === "A" ? "80% do valor" : c === "B" ? "os 15% seguintes" : "os últimos 5%" })))));
-    alvo.appendChild(h("div", { class: "cartao rolagem-x" },
-      h("table", { class: "dados" },
-        h("thead", {}, h("tr", {},
-          h("th", { texto: "Classe" }), h("th", { texto: "Item" }),
-          h("th", { class: "num", texto: "Saldo" }),
-          h("th", { class: "num", texto: "Valor" }),
-          h("th", { class: "num", texto: "% acum." }))),
-        h("tbody", {}, d.linhas.slice(0, 60).map((l) => h("tr", {
-          style: "cursor:pointer", onclick: () => abrirItem(l.id) },
-          h("td", {}, h("span", { class: "selo " + (l.classe === "A" ? "acento" : ""),
-                                  texto: l.classe })),
-          h("td", {}, h("div", { class: "forte uma-linha", texto: l.nome }),
-            h("div", { class: "mini sutil mono", texto: l.codigo })),
-          h("td", { class: "num", texto: `${num(l.quantidade)} ${l.unidade}` }),
-          h("td", { class: "num forte", texto: dinheiro(l.valor_total) }),
-          h("td", { class: "num sutil", texto: num(l.acumulado) + "%" })))))));
+    /* Lista, não tabela. Cinco colunas num aparelho de 390px viram uma
+       tabela que só rola de lado — e ninguém rola de lado para ler
+       relatório. A linha carrega a mesma informação e é tocável. */
+    const maiorValor = d.linhas[0]?.valor_total || 1;
+    alvo.appendChild(h("div", { class: "lista" }, d.linhas.slice(0, 60).map((l) =>
+      h("button", { class: "linha", onclick: () => abrirItem(l.id) },
+        h("div", { class: "linha-foto",
+          style: l.classe === "A"
+            ? "background:rgb(var(--acento-rgb)/.18);color:var(--acento)" : "" },
+          h("span", { class: "forte", texto: l.classe })),
+        h("div", { class: "linha-corpo" },
+          h("div", { class: "linha-nome uma-linha", texto: l.nome }),
+          h("div", { class: "linha-meta" },
+            h("span", { class: "mono", texto: l.codigo }),
+            h("span", { class: "sep", texto: "·" }),
+            h("span", { texto: `${num(l.quantidade)} ${l.unidade}` }),
+            h("span", { class: "sep so-computador", texto: "·" }),
+            h("span", { class: "so-computador",
+                        texto: `${num(l.acumulado)}% acumulado` })),
+          h("div", { class: "medidor", style: "margin-top:6px" },
+            h("i", { style: `width:${Math.max((l.valor_total / maiorValor) * 100, 2)}%;` +
+                            "background:var(--acento)" }))),
+        h("div", { class: "linha-fim" },
+          h("div", { class: "linha-saldo", texto: dinheiro(l.valor_total) }),
+          h("div", { class: "mini sutil", texto: num(l.participacao) + "%" }))))));
     return;
   }
 

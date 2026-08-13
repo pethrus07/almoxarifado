@@ -200,6 +200,61 @@ console.log("\nCelular · almoxarife");
   await p.keyboard.press("Escape");
   await p.waitForTimeout(200);
 
+  /* ⚠️ 16px é o mínimo no celular: abaixo disso o Safari do iOS dá zoom
+     sozinho ao focar o campo, a tela salta e o teclado cobre o que a
+     pessoa está digitando. Mede-se o valor calculado, não o declarado. */
+  await irAba(p, "busca");
+  await p.waitForSelector("#cx-busca");
+  const fonteCampo = await p.evaluate(() =>
+    parseFloat(getComputedStyle(document.querySelector("#cx-busca")).fontSize));
+  conferir(fonteCampo >= 16,
+    `o campo de busca tem 16px ou mais, senão o iOS dá zoom (tem ${fonteCampo}px)`);
+
+  /* A folha de conta é a ÚNICA porta para sair e trocar o tema no celular:
+     a lateral que tem os dois some por media query. Sem ela, quem entra
+     no aparelho não consegue sair. */
+  await irAba(p, "inicio");
+  await p.waitForTimeout(400);
+  conferir(await p.isVisible("#bt-conta"), "o botão de conta aparece no topo do celular");
+
+  const alvoConta = await p.evaluate(() => {
+    const r = document.querySelector("#bt-conta")?.getBoundingClientRect();
+    return r ? Math.round(Math.min(r.width, r.height)) : 0;
+  });
+  conferir(alvoConta >= 40, `o botão de conta tem pelo menos 40px (tem ${alvoConta})`);
+
+  await p.click("#bt-conta");
+  await p.waitForSelector("dialog[open]");
+  await p.waitForTimeout(400);
+  await print(p, "08-celular-conta");
+
+  const opcoes = await p.locator("dialog .linha-nome").allInnerTexts();
+  conferir(opcoes.some((t) => /Sair/i.test(t)), "a folha de conta tem Sair", opcoes.join(" | "));
+  conferir(opcoes.some((t) => /Tema/i.test(t)), "a folha de conta tem troca de tema");
+  conferir(opcoes.some((t) => /PIN/i.test(t)), "a folha de conta tem Meu PIN");
+  conferir(opcoes.some((t) => /Como usar/i.test(t)), "a folha de conta tem Como usar");
+
+  // Trocar o tema tem que REDESENHAR a folha, não fechá-la.
+  const temaAntes = await p.evaluate(() => document.documentElement.dataset.tema);
+  await p.locator("dialog .linha", { hasText: /Tema/i }).click();
+  await p.waitForTimeout(500);
+  const temaDepois = await p.evaluate(() => document.documentElement.dataset.tema);
+  conferir(temaAntes !== temaDepois, `o tema trocou (${temaAntes} → ${temaDepois})`);
+  conferir(await p.isVisible("dialog[open] .folha-caixa"),
+    "a folha continua aberta depois de trocar o tema");
+
+  // De volta ao escuro, e sair de verdade.
+  await p.locator("dialog .linha", { hasText: /Tema/i }).click();
+  await p.waitForTimeout(400);
+  await p.locator("dialog .linha", { hasText: /^Sair/i }).click();
+  await p.waitForTimeout(400);
+  await p.locator("dialog button", { hasText: /^Sair$/ }).click();
+  const voltouAoLogin = await p.waitForSelector("#tela-login:not([hidden])", { timeout: 8000 })
+    .then(() => true).catch(() => false);
+  conferir(voltouAoLogin, "dá para SAIR pelo celular e voltar ao login");
+  conferir(!(await p.evaluate(() => localStorage.getItem("almox.token"))),
+    "sair apaga o token guardado no aparelho");
+
   conferir(erros.length === 0, "nenhum erro de javascript no celular",
     erros.slice(0, 3).join(" | "));
   await ctx.close();
@@ -265,7 +320,12 @@ console.log("\nComputador · engenheiro");
   await p.locator(".cartao", { hasText: "Curva ABC" }).click();
   await p.waitForTimeout(900);
   await print(p, "15-computador-abc");
-  conferir(await p.locator("table.dados tbody tr").count() > 0, "a curva ABC sai em tabela");
+  // Lista, e não tabela, de propósito: cinco colunas num aparelho de 390px
+  // viram uma tabela que só rola de lado, e ninguém rola de lado para ler
+  // relatório. A linha carrega a mesma informação nos dois tamanhos.
+  conferir(await p.locator("button.linha").count() > 0, "a curva ABC sai em lista tocável");
+  conferir(await p.locator("button.linha .linha-foto", { hasText: /^A$/ }).count() > 0,
+    "a classe do item aparece na linha");
 
   // Tema claro — o galpão às vezes é claro, e o escritório sempre é.
   await p.click("#bt-tema");

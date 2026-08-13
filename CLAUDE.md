@@ -109,6 +109,23 @@ luva. Isso não é enfeite, é requisito:
   de largura variável é ilegível.
 - **Navegação embaixo no celular, no máximo 5 abas.** A sexta faria cada
   alvo cair abaixo de 60px num aparelho de 390px; o resto vai em "Mais".
+- **Campo de formulário tem 16px no celular** — não é escolha de estilo: o
+  Safari do iOS dá zoom na página sozinho ao focar um campo de fonte menor,
+  a tela salta e o teclado cobre o que a pessoa está digitando. Guardado por
+  `npm run test:visual`, que mede o valor calculado.
+- **Relatório é lista, não tabela.** Cinco colunas num aparelho de 390px
+  viram uma tabela que só rola de lado, e ninguém rola de lado para ler
+  relatório. Onde a tabela ganha (consumo por frente, com a barra
+  proporcional), a coluna menos útil leva `so-computador`.
+
+⚠️ **A lateral SOME no celular, e com ela tudo o que só existe lá.** Sair,
+trocar tema e rever o passo a passo moravam só na lateral — no aparelho não
+havia como fazer nenhum dos três, e quem entrasse não conseguia sair. Quem
+cobre isso é `folhaConta()`, aberta pelo botão da marca no topo (`#bt-conta`).
+O **PIN** também mora lá, e não só no Cadastro: quem mais precisa dele é o
+encarregado, que não tem aba de Cadastro nenhuma. **Recurso novo que você
+pendurar só na lateral não existe para metade dos usuários** — pendure
+também na folha de conta.
 - **Unidade contável não tem casa decimal.** Ninguém tem 12,54 tubos — é a
   primeira coisa que denuncia dado inventado, e o engenheiro repara.
 
