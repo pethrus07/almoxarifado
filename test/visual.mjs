@@ -41,19 +41,30 @@ async function entrar(pagina, login) {
   await pagina.fill("#cx-login", login);
   await pagina.fill("#cx-senha", "demo");
   await pagina.click("#bt-entrar");
-  await pagina.waitForSelector("#app:not([hidden])", { timeout: 10000 });
-  /* O tour cobre a tela com um overlay que captura clique. Ele é agendado
-     para 700ms depois do login, então dispensar antes disso não adianta:
-     espera-se o disparo e só então se limpa a sobra. */
-  await pagina.waitForTimeout(1100);
+  await pagina.waitForSelector("#app:not([hidden])", { timeout: 15000 });
+  await dispensarTour(pagina);
+  // O primeiro passo do tour LEVA para a tela de busca. Dispensá-lo deixa
+  // a pessoa lá, então volta-se ao início para medir a tela certa.
+  await pagina.evaluate(() => { if (window.irPara) window.irPara("inicio") });
+  await pagina.waitForTimeout(600);
+}
+
+/* O tour cobre a tela com um overlay que captura clique, e é agendado para
+   700ms DEPOIS de `comecar()` terminar. Contra a produção o `comecar()`
+   demora mais que local, então esperar um tempo fixo dispensa um tour que
+   ainda não nasceu — e ele aparece logo em seguida, por cima do clique
+   seguinte. Espera-se o overlay APARECER, e só então se limpa. */
+async function dispensarTour(pagina) {
+  try {
+    await pagina.waitForSelector(".tour-fundo", { timeout: 6000 });
+  } catch {
+    // Não apareceu (já visto neste navegador, por exemplo) — segue.
+  }
   await pagina.evaluate(() => {
     if (window.terminarTour) window.terminarTour();
     document.querySelectorAll(".tour-fundo,.tour-alvo,.tour-balao").forEach((e) => e.remove());
   });
-  // O primeiro passo do tour LEVA para a tela de busca. Dispensá-lo deixa
-  // a pessoa lá, então volta-se ao início para medir a tela certa.
-  await pagina.evaluate(() => { if (window.irPara) window.irPara("inicio") });
-  await pagina.waitForTimeout(500);
+  await pagina.waitForTimeout(200);
 }
 
 const print = (pagina, nome) =>
@@ -127,16 +138,20 @@ console.log("\nCelular · almoxarife");
   /* Busca ao vivo com sinônimo — o argumento de venda mais direto. */
   await irAba(p, "busca");
   await p.waitForSelector("#cx-busca");
+  /* Espera o RESULTADO, não um tempo. A busca tem 220ms de espera antes de
+     disparar mais a ida ao servidor: contra a produção isso passa dos
+     600ms fixos que bastavam local, e a afirmação corria antes da resposta
+     chegar — acusando defeito onde só havia latência. */
   await p.fill("#cx-busca", "ferro");
-  await p.waitForTimeout(600);
+  const achouVergalhao = await p.locator(".linha-nome", { hasText: /Vergalh/i })
+    .first().waitFor({ timeout: 10000 }).then(() => true).catch(() => false);
   await print(p, "03-celular-busca-sinonimo");
-  const achouVergalhao = await p.locator(".linha-nome", { hasText: /Vergalh/i }).count();
-  conferir(achouVergalhao > 0, "buscar 'ferro' no celular traz vergalhão");
+  conferir(achouVergalhao, "buscar 'ferro' no celular traz vergalhão");
 
   await p.fill("#cx-busca", "vergalhao");
-  await p.waitForTimeout(600);
-  const semAcento = await p.locator(".linha-nome", { hasText: /Vergalh/i }).count();
-  conferir(semAcento > 0, "buscar sem acento funciona");
+  const semAcento = await p.locator(".linha-nome", { hasText: /Vergalh/i })
+    .first().waitFor({ timeout: 10000 }).then(() => true).catch(() => false);
+  conferir(semAcento, "buscar sem acento funciona");
 
   // Ficha do item, com kardex.
   await p.locator("button.linha").first().click();
@@ -211,13 +226,16 @@ console.log("\nComputador · engenheiro");
 
   // Atalho de teclado: `/` foca a busca. É o detalhe que quem usa
   // computador percebe.
+  // `irPara("busca")` vai ao servidor buscar as facetas antes de montar a
+  // caixa, então o foco só chega depois da resposta.
   await p.keyboard.press("/");
-  await p.waitForTimeout(500);
-  const focouBusca = await p.evaluate(() => document.activeElement?.id === "cx-busca");
+  const focouBusca = await p.waitForFunction(
+    () => document.activeElement?.id === "cx-busca", null, { timeout: 10000 })
+    .then(() => true).catch(() => false);
   conferir(focouBusca, "a tecla / leva direto para a busca");
 
   await p.fill("#cx-busca", "");
-  await p.waitForTimeout(500);
+  await p.waitForTimeout(800);
   await p.locator(".chip", { hasText: "Abaixo do mínimo" }).click();
   await p.waitForTimeout(700);
   await print(p, "11-computador-busca-filtro");

@@ -179,6 +179,14 @@ O sorteio é semeado: rodar de novo dá exatamente o mesmo banco.
 acima do mínimo e **nada aparece como crítico** — a tela de abertura e o
 relatório de compra abrem vazios.
 
+⚠️ **`DELETE FROM sqlite_sequence;` fecha o bloco de limpeza, e é
+obrigatório.** Os ids nos INSERTs são escritos na mão (é o que deixa o
+arquivo determinístico), mas `DELETE` não zera o contador do
+`AUTOINCREMENT`: na segunda carga as obras nascem com id 5..8 enquanto os
+depósitos apontam para a obra 1, e tudo morre com "FOREIGN KEY constraint
+failed" sem dizer onde. Sem essa linha o seed só funciona em banco virgem —
+e passou despercebido local justamente porque eu recarregava sempre do zero.
+
 ## Rodar e publicar
 
 ```bash
@@ -199,15 +207,31 @@ o id faz o dev apontar para um banco novo e vazio, e todo login passa a dar
 
 ## Conta Cloudflare
 
-**Vai numa conta própria da RYZE** (subdomínio workers.dev `ryze`), não na
-`ryzecode08` — o subdomínio de lá é `desbravando-utv` e a URL sairia com o
-nome de outro cliente na frente do prospect. Credenciais no cofre DÜ SOL.
+**No ar em https://almoxarifado.ryzecode.workers.dev** (deploy 13/08/2026).
 
-⚠️ Sem `CLOUDFLARE_ACCOUNT_ID` no ambiente o wrangler cai no OAuth antigo,
-mira a conta errada e falha com `7404 database not found`. Exporte e-mail,
-chave e account id juntos antes de qualquer comando remoto.
+Conta própria da RYZE (`642a4a39…`, e-mail da conta),
+subdomínio workers.dev **`ryzecode`**. NÃO é a `ryzecode08` — o subdomínio
+de lá é `desbravando-utv` e a URL sairia com o nome de outro cliente na
+frente do prospect. Credenciais no cofre DÜ SOL.
 
-Os `database_id` no `wrangler.toml` estão como `PREENCHER_APOS_CRIAR`.
+⚠️ O OAuth em cache do wrangler nesta máquina é da **outra** conta
+(ryzecode08). Sem as três variáveis exportadas juntas ele mira a conta
+errada e falha com `7404 database not found`:
+
+```bash
+export CLOUDFLARE_EMAIL="<e-mail da conta>"
+export CLOUDFLARE_ACCOUNT_ID="642a4a3988033760c46abb97c122e0dd"
+export CLOUDFLARE_API_KEY="<Global API Key do cofre DÜ SOL>"
+```
+
+A chave é Global API Key no formato novo (`cfk_`), usada com
+`X-Auth-Email` + `X-Auth-Key` — **não** funciona como Bearer token.
+
+⚠️ Recém-deployado, o workers.dev responde a página "There is nothing here
+yet" por alguns segundos enquanto a rota propaga. Não é falha do deploy —
+espere e repita.
+
+O staging ainda está com `database_id = "PREENCHER_APOS_CRIAR"`.
 
 ## Convenções
 

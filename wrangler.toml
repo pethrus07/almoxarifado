@@ -25,7 +25,7 @@ account_id = "642a4a3988033760c46abb97c122e0dd"
 [[d1_databases]]
 binding = "DB"
 database_name = "almoxarifado"
-database_id = "PREENCHER_APOS_CRIAR"
+database_id = "770cdd24-0850-47ee-a79d-8bfcdc93d58c"
 
 # Foto do item, da avaria e do comprovante de entrega.
 #   npx wrangler r2 bucket create almoxarifado-fotos

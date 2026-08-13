@@ -22,6 +22,15 @@ DELETE FROM fornecedores;    DELETE FROM categorias;
 DELETE FROM sessoes;         DELETE FROM usuarios;     DELETE FROM empresas;
 DELETE FROM busca;
 
+-- ⚠️ Zera os contadores do AUTOINCREMENT. Sem esta linha o seed SÓ funciona
+-- em banco virgem: DELETE não mexe em sqlite_sequence, então na segunda
+-- carga as obras nascem com id 5..8 enquanto os depósitos aqui embaixo
+-- apontam, literalmente, para a obra 1 — e tudo morre com "FOREIGN KEY
+-- constraint failed", sem dizer onde. Os ids abaixo são escritos na mão de
+-- propósito (é o que deixa o arquivo determinístico), e escrever id na mão
+-- exige que a contagem comece do 1 toda vez.
+DELETE FROM sqlite_sequence;
+
 -- A cor e o nome vêm do cadastro: é o que torna o produto branco.
 INSERT INTO empresas(id, nome, cor, logo_texto, documento) VALUES
   ('demo', 'Construtora Modelo', '#b0805a', 'CM', '00.000.000/0001-00');

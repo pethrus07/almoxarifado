@@ -213,6 +213,15 @@ DELETE FROM frentes;         DELETE FROM depositos;    DELETE FROM obras;
 DELETE FROM fornecedores;    DELETE FROM categorias;
 DELETE FROM sessoes;         DELETE FROM usuarios;     DELETE FROM empresas;
 DELETE FROM busca;
+
+-- ⚠️ Zera os contadores do AUTOINCREMENT. Sem esta linha o seed SÓ funciona
+-- em banco virgem: DELETE não mexe em sqlite_sequence, então na segunda
+-- carga as obras nascem com id 5..8 enquanto os depósitos aqui embaixo
+-- apontam, literalmente, para a obra 1 — e tudo morre com "FOREIGN KEY
+-- constraint failed", sem dizer onde. Os ids abaixo são escritos na mão de
+-- propósito (é o que deixa o arquivo determinístico), e escrever id na mão
+-- exige que a contagem comece do 1 toda vez.
+DELETE FROM sqlite_sequence;
 `;
 
 async function gerar() {
