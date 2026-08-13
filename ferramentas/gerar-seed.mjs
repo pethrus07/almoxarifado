@@ -200,7 +200,7 @@ const cabecalho = `-- ==========================================================
 --  A empresa do cliente é outra, nasce vazia, e nenhum teste roda nela.
 --
 --  Senha de todos os usuários da demonstração: demo
---  Logins: dono · engenheiro · almoxarife · encarregado
+--  Logins: diretoria · engenheiro · almoxarife · encarregado
 -- ============================================================
 
 DELETE FROM fotos;           DELETE FROM eventos;
@@ -235,7 +235,10 @@ INSERT INTO empresas(id, nome, cor, logo_texto, documento) VALUES
 
   /* ---------- gente ---------- */
   const USUARIOS = [
-    ["dono", "Roberto Vasconcelos", "admin", "1001", null],
+    // Sobrenome trocado de propósito: o anterior ecoava o nome do prospect,
+    // e demonstração que parece meio personalizada é pior que demonstração
+    // claramente genérica — quem está avaliando repara.
+    ["diretoria", "Roberto Vasconcelos", "admin", "1001", null],
     ["engenheiro", "Marcos Vinícius Andrade", "engenheiro", "1002", null],
     ["almoxarife", "Sebastião Ferreira", "almoxarife", "1003", 1],
     ["encarregado", "João Paulo Medeiros", "encarregado", "1004", 1],

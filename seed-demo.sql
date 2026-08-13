@@ -8,7 +8,7 @@
 --  A empresa do cliente é outra, nasce vazia, e nenhum teste roda nela.
 --
 --  Senha de todos os usuários da demonstração: demo
---  Logins: dono · engenheiro · almoxarife · encarregado
+--  Logins: diretoria · engenheiro · almoxarife · encarregado
 -- ============================================================
 
 DELETE FROM fotos;           DELETE FROM eventos;
@@ -37,7 +37,7 @@ INSERT INTO empresas(id, nome, cor, logo_texto, documento) VALUES
 
 -- Senha de todos: demo
 INSERT INTO usuarios(empresa_id, nome, login, senha_hash, senha_sal, papel, pin, obra_id) VALUES
-  ('demo', 'Roberto Vasconcelos', 'dono', 'AcwN3VUK3ESwVxKLVcM8zQ5vTqCOP3j+X8N0feiZbIc=', 'ZGhgenhMRF5cUCgiMDQMBg==', 'admin', '1001', NULL),
+  ('demo', 'Roberto Vasconcelos', 'diretoria', 'FZEt9Uf4X9XY+WORBLO9kTEZJ6NYwbzDKDwL2/G28xM=', 'ZG58cGhMWFhZWy8/MS8NGw==', 'admin', '1001', NULL),
   ('demo', 'Marcos Vinícius Andrade', 'engenheiro', 'zdWx+71a1VEcCnKa8NEEgKRHPR+xtdj1VPCYpCQ//UE=', 'ZWlpcHJLT1hKUCMjMz4MAQ==', 'engenheiro', '1002', NULL),
   ('demo', 'Sebastião Ferreira', 'almoxarife', 'Jwuea+QRk4RiZnEA1I60d46Ujgwd21AD0LLiwdxErbE=', 'YWtjemRCWFheWichOTQaCA==', 'almoxarife', '1003', 1),
   ('demo', 'João Paulo Medeiros', 'encarregado', 'QNFRhHqyqtkp/jOr4dsvZ0PQ0NEaksMt4DiO7WVFt1Y=', 'ZWltdG5RT1ZZWykoOjgDGw==', 'encarregado', '1004', 1);

@@ -307,7 +307,7 @@ console.log("\nComputador · engenheiro");
   conferir(await p.locator("button.linha.critico").count() > 0,
     "o filtro 'abaixo do mínimo' pinta as linhas de vermelho");
 
-  // Relatórios — o que fecha a venda com o engenheiro e o dono.
+  // Relatórios — o que fecha a venda com o engenheiro e a diretoria.
   await irAba(p, "relatorios");
   await p.waitForTimeout(600);
   await print(p, "12-computador-relatorios");

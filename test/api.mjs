@@ -49,17 +49,17 @@ async function rodar() {
   /* ---------- login e papéis ---------- */
   secao("Login e papéis");
 
-  const ruim = await chamar("/login", { corpo: { empresa: EMPRESA, login: "dono", senha: "errada" } });
+  const ruim = await chamar("/login", { corpo: { empresa: EMPRESA, login: "diretoria", senha: "errada" } });
   conferir(ruim.status === 401, "senha errada é recusada com 401");
   conferir(!/não existe|not found/i.test(JSON.stringify(ruim.dados)),
     "a recusa não revela se o usuário existe");
 
-  const dono = await entrar("dono");
+  const diretoria = await entrar("diretoria");
   const engenheiro = await entrar("engenheiro");
   const almoxarife = await entrar("almoxarife");
   const encarregado = await entrar("encarregado");
 
-  conferir(dono.eu.ve_dinheiro === true, "dono vê valores");
+  conferir(diretoria.eu.ve_dinheiro === true, "diretoria vê valores");
   conferir(engenheiro.eu.ve_dinheiro === true, "engenheiro vê valores");
   conferir(almoxarife.eu.ve_dinheiro === false, "almoxarife NÃO vê valores");
   conferir(encarregado.eu.ve_dinheiro === false, "encarregado NÃO vê valores");
@@ -77,9 +77,9 @@ async function rodar() {
   conferir(!textoAlmox.includes("custo_ultimo"),
     "resposta ao almoxarife não traz custo_ultimo", textoAlmox.slice(0, 160));
 
-  const buscaDono = await chamar("/busca?q=cimento", { token: dono.token });
-  conferir(JSON.stringify(buscaDono.dados).includes("custo_ultimo"),
-    "resposta ao dono traz custo_ultimo");
+  const buscaDiretoria = await chamar("/busca?q=cimento", { token: diretoria.token });
+  conferir(JSON.stringify(buscaDiretoria.dados).includes("custo_ultimo"),
+    "resposta à diretoria traz custo_ultimo");
 
   const inicioAlmox = await chamar("/inicio", { token: almoxarife.token });
   conferir(!JSON.stringify(inicioAlmox.dados).includes("valor_imobilizado"),
@@ -351,12 +351,12 @@ async function rodar() {
   secao("Relatórios");
 
   for (const nome of ["reposicao", "consumo", "abc", "validade", "parados"]) {
-    const r = await chamar("/relatorios/" + nome, { token: dono.token });
+    const r = await chamar("/relatorios/" + nome, { token: diretoria.token });
     conferir(r.status === 200 && Array.isArray(r.dados.linhas),
       `relatório '${nome}' responde com linhas`, JSON.stringify(r.dados).slice(0, 120));
   }
 
-  const reposicao = await chamar("/relatorios/reposicao", { token: dono.token });
+  const reposicao = await chamar("/relatorios/reposicao", { token: diretoria.token });
   conferir(reposicao.dados.linhas.length > 0, "há o que comprar na demonstração");
   conferir(reposicao.dados.linhas.every((l) => l.comprar > 0),
     "toda linha do relatório de compra tem quantidade a comprar");
@@ -368,13 +368,13 @@ async function rodar() {
   conferir(!JSON.stringify(reposicaoAlmox.dados).includes('"valor"'),
     "relatório de compra sem valores para o almoxarife");
 
-  const abc = await chamar("/relatorios/abc", { token: dono.token });
+  const abc = await chamar("/relatorios/abc", { token: diretoria.token });
   conferir(abc.dados.linhas.length > 0 && abc.dados.linhas[0].classe === "A",
     "a curva ABC começa pela classe A");
   const ultimaA = [...abc.dados.linhas].reverse().find((l) => l.classe === "A");
   conferir(!ultimaA || ultimaA.acumulado <= 80.001, "a classe A para nos 80% acumulados");
 
-  const consumo = await chamar("/relatorios/consumo", { token: dono.token });
+  const consumo = await chamar("/relatorios/consumo", { token: diretoria.token });
   conferir(consumo.dados.linhas.length > 0, "há consumo por frente no período");
 
   /* ---------- etiqueta ---------- */
@@ -425,20 +425,20 @@ async function rodar() {
   /* ---------- exportação ---------- */
   secao("Exportar para planilha");
 
-  const csvDono = await fetch(`${BASE}/api/exportar/estoque`, {
-    headers: { authorization: "Bearer " + dono.token },
+  const csvDiretoria = await fetch(`${BASE}/api/exportar/estoque`, {
+    headers: { authorization: "Bearer " + diretoria.token },
   });
   /* Tem que ser lido em BYTES: `Response.text()` remove o BOM inicial por
      especificação, então a leitura como texto diria que ele não está lá
      mesmo quando está. */
-  const bytesCsv = new Uint8Array(await csvDono.clone().arrayBuffer());
-  const textoCsv = await csvDono.text();
-  conferir(csvDono.status === 200, "exporta o estoque");
+  const bytesCsv = new Uint8Array(await csvDiretoria.clone().arrayBuffer());
+  const textoCsv = await csvDiretoria.text();
+  conferir(csvDiretoria.status === 200, "exporta o estoque");
   conferir(bytesCsv[0] === 0xEF && bytesCsv[1] === 0xBB && bytesCsv[2] === 0xBF,
     "o CSV começa com BOM — o Excel abre sem perguntar",
     `primeiros bytes: ${[...bytesCsv.slice(0, 4)].map((b) => b.toString(16)).join(" ")}`);
   conferir(textoCsv.split("\r\n")[0].includes(";"), "as colunas são separadas por ponto e vírgula");
-  conferir(textoCsv.includes("Valor total"), "o dono recebe as colunas de dinheiro");
+  conferir(textoCsv.includes("Valor total"), "a diretoria recebe as colunas de dinheiro");
 
   const csvAlmox = await fetch(`${BASE}/api/exportar/estoque`, {
     headers: { authorization: "Bearer " + almoxarife.token },
@@ -451,7 +451,7 @@ async function rodar() {
   secao("Isolamento");
 
   const foto = await fetch(`${BASE}/api/foto/outra-empresa/qualquer.jpg`, {
-    headers: { authorization: "Bearer " + dono.token },
+    headers: { authorization: "Bearer " + diretoria.token },
   });
   conferir(foto.status === 404, "não dá para pegar foto de outra empresa trocando a URL");
 

@@ -1271,7 +1271,7 @@ R.get(/^\/api\/inventarios\/(\d+)$/, async ({ env, usuario, params }) => {
       total: itens.results.length,
       contados: contados.length,
       divergentes: contados.length - certos,
-      // Acuracidade: o número que o dono quer ver subir mês a mês.
+      // Acuracidade: o número que a diretoria quer ver subir mês a mês.
       acuracidade: contados.length ? Math.round((certos / contados.length) * 100) : null,
     },
   });

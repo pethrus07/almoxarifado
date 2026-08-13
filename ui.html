@@ -472,7 +472,7 @@ async function mostrarAtalhosDemo() {
     { login: "almoxarife",  rotulo: "Almoxarife",  nota: "movimenta e entrega" },
     { login: "encarregado", rotulo: "Encarregado", nota: "pede material" },
     { login: "engenheiro",  rotulo: "Engenheiro",  nota: "gestão da obra" },
-    { login: "dono",        rotulo: "Dono",        nota: "tudo, com valores" },
+    { login: "diretoria",   rotulo: "Diretoria",   nota: "tudo, com valores" },
   ];
   limpar($("#lista-atalhos")).append(...papeis.map((p) =>
     h("button", { class: "chip", type: "button", title: p.nota, onclick: () => {
@@ -659,7 +659,7 @@ async function comecar() {
 }
 
 const rotuloPapel = (p) => ({
-  admin: "Dono", engenheiro: "Engenheiro", almoxarife: "Almoxarife", encarregado: "Encarregado",
+  admin: "Diretoria", engenheiro: "Engenheiro", almoxarife: "Almoxarife", encarregado: "Encarregado",
 }[p] || p);
 
 $("#bt-sair").addEventListener("click", sair);
@@ -2153,7 +2153,7 @@ async function baixarCsv(tipo, de) {
    INVENTÁRIO — contagem física contra o sistema
 
    O número que sai daqui é a acuracidade do estoque: a porcentagem de
-   itens em que o sistema acertou. É o indicador que o dono acompanha
+   itens em que o sistema acertou. É o indicador que a diretoria acompanha
    subir mês a mês — e o que prova que o controle está sendo usado.
    ============================================================ */
 

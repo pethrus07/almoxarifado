@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS empresas (
 );
 
 -- Papéis (o servidor decide o que cada um vê — nunca a tela):
---   admin       dono / sócio: tudo, inclusive dinheiro e cadastro
+--   admin       diretoria / sócio: tudo, inclusive dinheiro e cadastro
 --   engenheiro  gestão da obra: tudo da obra + dinheiro, sem cadastro global
 --   almoxarife  movimenta estoque, atende requisição. NÃO vê custo.
 --   encarregado pede material e consulta saldo. NÃO vê custo.

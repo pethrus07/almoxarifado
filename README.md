@@ -37,7 +37,7 @@ de acerto é o número que sobe mês a mês.
 unidade de compra), consumo por frente de serviço, curva ABC, vencimentos e
 estoque parado. Tudo exportável para planilha.
 
-**Quatro níveis de acesso.** Dono e engenheiro veem dinheiro; almoxarife e
+**Quatro níveis de acesso.** Diretoria e engenheiro veem dinheiro; almoxarife e
 encarregado não — e isso é decidido no servidor, não escondido na tela.
 
 **Multi-obra desde a primeira linha.** Obras, depósitos e frentes de serviço
@@ -68,7 +68,7 @@ npx wrangler dev             # abre em http://127.0.0.1:8787
 ```
 
 Entrar com a empresa `demo` e qualquer um destes usuários, senha `demo`:
-`dono`, `engenheiro`, `almoxarife`, `encarregado`. Na tela de login da
+`diretoria`, `engenheiro`, `almoxarife`, `encarregado`. Na tela de login da
 empresa `demo` há atalhos para entrar direto em cada papel.
 
 ## Testes
