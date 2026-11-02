@@ -1,10 +1,10 @@
-# Almoxarifado — notas para quem for mexer
+# Almoxarifado · notas técnicas
 
 ## O que é
 Controle de estoque de obra por QR Code. Cloudflare Worker + D1 + R2, mesmo
 esquema dos outros sistemas: **um `worker.js` sem framework**, roteamento na
 mão por regex, e o front inteiro em `ui.html` importado como texto. Visão
-geral no [README.md](README.md).
+geral no [README](../README.md).
 
 O produto é **branco de propósito**: nome, cor e logo saem de `empresas`, não
 do código. O primeiro prospect é uma construtora com 22 obras — o sistema
@@ -222,46 +222,14 @@ que "não atualizava".
 o id faz o dev apontar para um banco novo e vazio, e todo login passa a dar
 500 sem mensagem útil. Não é defeito: é rodar esquema e seed de novo.
 
-## Conta Cloudflare
+## Onde rodou
 
-**No ar em https://almoxarifado.ryzecode.workers.dev** (deploy 13/08/2026).
+Ficou no ar de 13/08/2026 a 07/09/2026 como Worker na conta Cloudflare da RYZE, para apresentação a um prospect. O Worker foi apagado em 07/09/2026; banco D1 e bucket R2 ficaram na conta. O projeto está arquivado e não tem deploy.
 
-Conta própria da RYZE (`642a4a39…`, e-mail da conta),
-subdomínio workers.dev **`ryzecode`**. NÃO é a `ryzecode08` — o subdomínio
-de lá é `desbravando-utv` e a URL sairia com o nome de outro cliente na
-frente do prospect. Credenciais no cofre DÜ SOL.
-
-⚠️ O OAuth em cache do wrangler nesta máquina é da **outra** conta
-(ryzecode08). Sem as três variáveis exportadas juntas ele mira a conta
-errada e falha com `7404 database not found`:
-
-```bash
-export CLOUDFLARE_EMAIL="<e-mail da conta>"
-export CLOUDFLARE_ACCOUNT_ID="642a4a3988033760c46abb97c122e0dd"
-export CLOUDFLARE_API_KEY="<Global API Key do cofre DÜ SOL>"
-```
-
-A chave é Global API Key no formato novo (`cfk_`), usada com
-`X-Auth-Email` + `X-Auth-Key` — **não** funciona como Bearer token.
-
-⚠️ Recém-deployado, o workers.dev responde a página "There is nothing here
-yet" por alguns segundos enquanto a rota propaga. Não é falha do deploy —
-espere e repita.
-
-O staging ainda está com `database_id = "PREENCHER_APOS_CRIAR"`.
-
-## Convenções
-
-- Escreva em **português** e no estilo do arquivo: single-file, sem
-  framework, sem dependência nova sem necessidade real.
-- Nos commits deste repo, **NÃO** adicione o trailer `Co-Authored-By`.
-
-## Em aberto
+## Em aberto quando foi arquivado
 
 - **Offline de verdade.** Fila local de saída segura queda curta de sinal;
-  sincronização completa é projeto à parte e é honesto cobrar por ela.
-- **Foto do item** está pronta no código mas depende de R2 — que é opcional
-  e hoje não está criado.
-- **Escopo comercial não fechado.** O que o cliente pediu foi levantado por
-  conversa, não por documento. Antes de acrescentar qualquer coisa, confira
-  com quem está negociando.
+  sincronização completa seria projeto à parte.
+- **Foto do item** está pronta no código mas depende de R2, que é opcional.
+- **Escopo comercial nunca fechado.** O que o prospect pediu foi levantado por
+  conversa, não por documento.

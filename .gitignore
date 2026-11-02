@@ -8,3 +8,6 @@ seed-*-real.sql
 backup*.sql
 ferramentas/saida/
 test/telas/
+
+# Cópia do D1 de produção (07/09/2026): fica só na máquina.
+backup-d1-*/
