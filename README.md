@@ -70,4 +70,4 @@ API and visual tests change the local demo database on purpose. Stop `wrangler d
 
 ## License
 
-All rights reserved. RYZE.
+MIT. See [LICENSE](LICENSE).

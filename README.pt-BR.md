@@ -70,4 +70,4 @@ Os testes de API e visual mexem de propósito no banco local de demonstração. 
 
 ## Licença
 
-Todos os direitos reservados. RYZE.
+MIT. Veja o arquivo [LICENSE](LICENSE).
