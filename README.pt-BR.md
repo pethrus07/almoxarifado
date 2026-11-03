@@ -1,16 +1,14 @@
-Português | [English](README.md)
-
 # Almoxarifado
 
-> **Arquivado (2026-11).** Fora de produção. O Worker foi apagado em 07/09/2026. O código roda localmente com dados de demonstração.
+[English](README.md) · Português
 
 Controle de estoque de obra por QR Code. Cada material tem etiqueta, cada ferramenta tem dono, e cada movimento fica no histórico com quem e quando. Feito para quem está de pé no galpão com o material na mão.
 
-## O que foi
+## Status
 
-Um MVP feito em agosto de 2026 para apresentar a uma construtora (um prospect, não um cliente). Ficou no ar no Cloudflare Workers por cerca de um mês e a negociação não andou.
+Arquivado (novembro de 2026). Fora de produção. Um MVP feito em agosto de 2026 para apresentar a uma construtora (um prospect, não um cliente). Ficou no ar no Cloudflare Workers por cerca de um mês e a negociação não andou. O Worker foi apagado em 07/09/2026. O código roda localmente com dados de demonstração.
 
-O que ele faz:
+## O que faz
 
 - **Busca que acha.** Uma caixa só resolve nome, código, prateleira, código de barras do fabricante e patrimônio de ferramenta, sem acento, com erro de digitação ou pela metade. Sinônimos fazem "vergalhão", "ferro" e "CA-50" acharem o mesmo item (FTS5 do SQLite).
 - **Etiqueta com QR.** Folha A4 em papel comum. A câmera do celular abre o sistema no item certo. Gerador de QR escrito do zero (`qr.js`), testado contra uma implementação de referência.
@@ -21,20 +19,17 @@ O que ele faz:
 - **Relatórios:** o que comprar (por fornecedor), consumo por frente, curva ABC, vencimentos, estoque parado. Exportáveis para planilha.
 - **Quatro níveis de acesso** decididos no servidor, não escondidos na tela. Multi-empresa e multi-obra desde a primeira tabela.
 
+## O que ficou de aprendizado
+
+- **Saldo derivado ganha de campo editável.** Estoque como soma de um livro que só recebe lançamento acabou com uma classe inteira de erro e deu trilha de auditoria de graça. Ferramenta é a exceção: posse é máquina de estados, gravada na mesma transação do seu log.
+- **Permissão mora no servidor.** Esconder coluna de dinheiro na tela não é controle de acesso.
+- **Teste de sintaxe do script embutido se paga.** Um parêntese a menos fez o navegador descartar um bloco `<script>` inteiro com a página abrindo normalmente; só a checagem de parse pegou.
+- **Tela se mede, não se olha.** O teste visual confere o tamanho do alvo de toque num celular de 390 px e num computador de 1440 px.
+- **Busca precisa de sinônimo, não só de tolerância a erro.** Peão, engenheiro e nota fiscal chamam o mesmo item por nomes diferentes.
+
 ## Stack
 
 Cloudflare Worker + D1 (SQLite) + R2, sem framework e sem build. O front inteiro é `ui.html` importado como texto, com `estilo.css` colado dentro: uma requisição só, sem CDN, porque o galpão tem sinal ruim.
-
-| arquivo | o que é |
-|---|---|
-| `worker.js` | API e roteamento, escrito na mão |
-| `ui.html` | a interface inteira, arquivo único |
-| `estilo.css` | tokens de tema, claro e escuro |
-| `schema.sql` | estrutura do banco |
-| `qr.js` | gerador de QR próprio, sem dependência |
-| `ferramentas/gerar-seed.mjs` | monta a obra de demonstração (`seed-demo.sql`) |
-| `test/` | testes de sintaxe, QR, API e visual |
-| `docs/NOTAS-TECNICAS.md` | decisões de projeto e armadilhas |
 
 ## Rodar localmente
 
@@ -60,13 +55,22 @@ npm run test:tudo     # tudo acima, na ordem
 
 Os testes de API e visual mexem de propósito no banco local de demonstração. Pare o `wrangler dev` e rode `npm run recarregar` depois.
 
-## O que ficou de aprendizado
+## Pastas
 
-- **Saldo derivado ganha de campo editável.** Estoque como soma de um livro que só recebe lançamento acabou com uma classe inteira de erro e deu trilha de auditoria de graça. Ferramenta é a exceção: posse é máquina de estados, gravada na mesma transação do seu log.
-- **Permissão mora no servidor.** Esconder coluna de dinheiro na tela não é controle de acesso.
-- **Teste de sintaxe do script embutido se paga.** Um parêntese a menos fez o navegador descartar um bloco `<script>` inteiro com a página abrindo normalmente; só a checagem de parse pegou.
-- **Tela se mede, não se olha.** O teste visual confere o tamanho do alvo de toque num celular de 390 px e num computador de 1440 px.
-- **Busca precisa de sinônimo, não só de tolerância a erro.** Peão, engenheiro e nota fiscal chamam o mesmo item por nomes diferentes.
+| arquivo | o que é |
+|---|---|
+| `worker.js` | API e roteamento, escrito na mão |
+| `ui.html` | a interface inteira, arquivo único |
+| `estilo.css` | tokens de tema, claro e escuro |
+| `schema.sql` | estrutura do banco |
+| `qr.js` | gerador de QR próprio, sem dependência |
+| `ferramentas/gerar-seed.mjs` | monta a obra de demonstração (`seed-demo.sql`) |
+| `test/` | testes de sintaxe, QR, API e visual |
+| `docs/NOTAS-TECNICAS.md` | decisões de projeto e armadilhas |
+
+## Arquitetura
+
+Diagramas (casos de uso, processo e containers) em [docs/arquitetura/](docs/arquitetura/). Decisões de projeto e armadilhas em [docs/NOTAS-TECNICAS.md](docs/NOTAS-TECNICAS.md).
 
 ## Licença
 
